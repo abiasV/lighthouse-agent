@@ -1,0 +1,22 @@
+{
+  "name": "lighthouse-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "node --test",
+    "start": "node server.js",
+    "test:real:validation": "node scripts/testRealValidation.js",
+    "test:real:execution": "node scripts/testRealExecution.js",
+    "test:real:demand": "node scripts/testRealDemand.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "openai": "^7.5.0"
+  }
+}
