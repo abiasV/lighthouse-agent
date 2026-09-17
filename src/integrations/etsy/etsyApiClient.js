@@ -163,6 +163,10 @@ export default async function etsyApiGet({
       continue;
     }
 
-    throw new Error("ETSY_API_REQUEST_FAILED");
+    const error = new Error("ETSY_API_REQUEST_FAILED");
+
+    error.status = response.status;
+
+    throw error;
   }
 }

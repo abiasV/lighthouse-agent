@@ -81,6 +81,7 @@ export function createEtsyReadRouter({
         return res.status(502).json({
           error: error.message,
           message: "Etsy rejected the API request.",
+          providerStatus: Number.isInteger(error.status) ? error.status : null,
         });
       }
 
