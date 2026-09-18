@@ -124,7 +124,7 @@ test("Etsy authorization denial discards the stored OAuth session", async () => 
     state: "denied_state",
     codeVerifier: "denied_verifier",
     redirectUri: "https://example.com/api/etsy/auth/callback",
-    scopes: ["shops_r", "listings_r", "transactions_r"],
+    scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
     now,
   });
 
@@ -156,7 +156,7 @@ test("successful Etsy callback creates a connection without exposing tokens", as
     state: "valid_callback_state",
     codeVerifier: "stored_callback_verifier",
     redirectUri: "https://example.com/api/etsy/auth/callback",
-    scopes: ["shops_r", "listings_r", "transactions_r"],
+    scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
     now,
   });
 
@@ -174,7 +174,7 @@ test("successful Etsy callback creates a connection without exposing tokens", as
 
       expiresInSeconds: 3600,
 
-      scopes: ["shops_r", "listings_r", "transactions_r"],
+      scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
     };
   }
 
@@ -221,7 +221,7 @@ test("successful Etsy callback consumes the OAuth state", async () => {
     state: "single_use_callback_state",
     codeVerifier: "single_use_callback_verifier",
     redirectUri: "https://example.com/api/etsy/auth/callback",
-    scopes: ["shops_r", "listings_r", "transactions_r"],
+    scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
     now,
   });
 
@@ -235,7 +235,7 @@ test("successful Etsy callback consumes the OAuth state", async () => {
 
       expiresInSeconds: 3600,
 
-      scopes: ["shops_r", "listings_r", "transactions_r"],
+      scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
     };
   }
 

@@ -4,7 +4,7 @@ import express from "express";
 
 import { createEtsyReadRouter } from "../src/routes/etsyReadRoutes.js";
 
-function startTestServer({ getAuthenticatedUser }) {
+function startTestServer({ getAuthenticatedUser, getUser, getConnection }) {
   const app = express();
 
   app.use(express.json());
@@ -13,6 +13,8 @@ function startTestServer({ getAuthenticatedUser }) {
     "/api/etsy",
     createEtsyReadRouter({
       getAuthenticatedUser,
+      getUser,
+      getConnection,
     }),
   );
 
@@ -181,6 +183,110 @@ test("Etsy read API maps temporary Etsy failures to 502", async () => {
     const data = await response.json();
 
     assert.equal(data.error, "ETSY_TEMPORARY_ERROR");
+  } finally {
+    server.close();
+  }
+});
+
+test("Etsy read API returns the connected Etsy user profile", async () => {
+  let capturedInput = null;
+
+  function fakeGetConnection(connectionId) {
+    return {
+      connectionId,
+      etsyUserId: "12345678",
+    };
+  }
+
+  async function fakeGetUser(input) {
+    capturedInput = input;
+
+    return {
+      user_id: 12345678,
+      login_name: "test_user",
+    };
+  }
+
+  const { server, baseUrl } = await startTestServer({
+    getAuthenticatedUser: async () => ({
+      user_id: 12345678,
+      shop_id: 87654321,
+    }),
+    getUser: fakeGetUser,
+    getConnection: fakeGetConnection,
+  });
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/etsy/user?connectionId=connection_1`,
+    );
+
+    assert.equal(response.status, 200);
+
+    const data = await response.json();
+
+    assert.deepEqual(data, {
+      connected: true,
+
+      user: {
+        user_id: 12345678,
+        login_name: "test_user",
+      },
+    });
+
+    assert.equal(capturedInput.connectionId, "connection_1");
+
+    assert.equal(capturedInput.etsyUserId, "12345678");
+  } finally {
+    server.close();
+  }
+});
+
+test("Etsy user profile API requires a connection ID", async () => {
+  const { server, baseUrl } = await startTestServer({
+    getAuthenticatedUser: async () => ({
+      user_id: 12345678,
+    }),
+    getUser: async () => ({
+      user_id: 12345678,
+    }),
+    getConnection: () => null,
+  });
+
+  try {
+    const response = await fetch(`${baseUrl}/api/etsy/user`);
+
+    assert.equal(response.status, 400);
+
+    const data = await response.json();
+
+    assert.equal(data.error, "ETSY_CONNECTION_ID_REQUIRED");
+  } finally {
+    server.close();
+  }
+});
+
+test("Etsy user profile API returns 404 for a missing connection", async () => {
+  const { server, baseUrl } = await startTestServer({
+    getAuthenticatedUser: async () => ({
+      user_id: 12345678,
+    }),
+    getUser: async () => ({
+      user_id: 12345678,
+    }),
+    getConnection: () => null,
+  });
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/etsy/user?connectionId=missing_connection`,
+    );
+
+    assert.equal(response.status, 404);
+
+    const data = await response.json();
+
+    assert.equal(data.error, "ETSY_CONNECTION_NOT_FOUND");
   } finally {
     server.close();
   }

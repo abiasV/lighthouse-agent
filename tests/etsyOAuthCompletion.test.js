@@ -27,7 +27,7 @@ test("completes Etsy authorization using the stored PKCE session", async () => {
     state: "valid_state",
     codeVerifier: "stored_verifier",
     redirectUri: "https://example.com/api/etsy/auth/callback",
-    scopes: ["shops_r", "listings_r", "transactions_r"],
+    scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
     now,
   });
 
@@ -45,7 +45,7 @@ test("completes Etsy authorization using the stored PKCE session", async () => {
 
       expiresInSeconds: 3600,
 
-      scopes: ["shops_r", "listings_r", "transactions_r"],
+      scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
     };
   }
 
@@ -117,7 +117,7 @@ test("OAuth state cannot be reused after completion", async () => {
     state: "single_use_state",
     codeVerifier: "stored_verifier",
     redirectUri: "https://example.com/callback",
-    scopes: ["shops_r", "listings_r", "transactions_r"],
+    scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
     now,
   });
 
@@ -131,7 +131,7 @@ test("OAuth state cannot be reused after completion", async () => {
 
       expiresInSeconds: 3600,
 
-      scopes: ["shops_r", "listings_r", "transactions_r"],
+      scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
     };
   }
 
@@ -165,7 +165,7 @@ test("does not create a connection when required scopes are missing", async () =
     state: "missing_scope_state",
     codeVerifier: "stored_verifier",
     redirectUri: "https://example.com/callback",
-    scopes: ["shops_r", "listings_r", "transactions_r"],
+    scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
     now,
   });
 

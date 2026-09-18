@@ -26,7 +26,7 @@ test("refreshes an Etsy access token using the stored refresh token", async () =
 
           expires_in: 3600,
 
-          scope: "shops_r listings_r transactions_r",
+          scope: "shops_r listings_r transactions_r email_r",
         };
       },
     };
@@ -62,7 +62,7 @@ test("refreshes an Etsy access token using the stored refresh token", async () =
 
   assert.equal(result.refreshToken, "12345678.new_refresh");
 
-  assert.deepEqual(result.scopes, ["shops_r", "listings_r", "transactions_r"]);
+  assert.deepEqual(result.scopes, ["shops_r", "listings_r", "transactions_r", "email_r"]);
 });
 
 test("rejects an unsuccessful Etsy token refresh", async () => {

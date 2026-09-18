@@ -26,7 +26,7 @@ test("exchanges Etsy authorization code using the stored PKCE verifier", async (
 
           expires_in: 3600,
 
-          scope: "shops_r listings_r transactions_r",
+          scope: "shops_r listings_r transactions_r email_r",
         };
       },
     };
@@ -64,7 +64,7 @@ test("exchanges Etsy authorization code using the stored PKCE verifier", async (
     "https://example.com/api/etsy/auth/callback",
   );
 
-  assert.deepEqual(result.scopes, ["shops_r", "listings_r", "transactions_r"]);
+  assert.deepEqual(result.scopes, ["shops_r", "listings_r", "transactions_r", "email_r"]);
 
   assert.equal(result.accessToken, "12345678.fake_access_token");
 
