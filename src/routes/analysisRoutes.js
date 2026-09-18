@@ -14,6 +14,7 @@ import buildAnalysisResponse from "../utils/buildAnalysisResponse.js";
 
 import { analyses } from "../state/sessionStore.js";
 import applyTaskOutcome from "../state/applyTaskOutcome.js";
+import { authorizeBetaRealAiRun } from "../middleware/betaAccessGuard.js";
 
 const router = express.Router();
 
@@ -169,6 +170,18 @@ router.post("/execute", async (req, res) => {
     }
 
     const useRealExecutionAI = process.env.USE_REAL_EXECUTION_AI === "true";
+
+    if (useRealExecutionAI) {
+      const betaAccess = authorizeBetaRealAiRun({
+        accessKey: req.get("x-lighthouse-beta-key"),
+      });
+
+      if (!betaAccess.allowed) {
+        return res.status(betaAccess.statusCode).json({
+          error: betaAccess.error,
+        });
+      }
+    }
 
     const executeTask = getExecutionTaskExecutor(useRealExecutionAI);
 
