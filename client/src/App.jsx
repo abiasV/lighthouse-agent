@@ -1227,17 +1227,29 @@ function App() {
                     best steps with less manual work.
                   </p>
 
-                  <div className="mt-6 flex flex-wrap gap-3 text-sm font-medium text-slate-600 dark:text-slate-300">
-                    <span className="rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                      ✓ Listing recovery
+                  <div className="mt-6 flex flex-wrap gap-3 text-sm font-medium text-indigo-800 dark:text-indigo-200">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50/70 px-3 py-2 dark:border-indigo-900 dark:bg-indigo-950/30">
+                      <span
+                        aria-hidden="true"
+                        className="h-1.5 w-1.5 rounded-full bg-[#F1641E]"
+                      />
+                      Listing recovery
                     </span>
 
-                    <span className="rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                      ✓ Growth prioritization
+                    <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50/70 px-3 py-2 dark:border-indigo-900 dark:bg-indigo-950/30">
+                      <span
+                        aria-hidden="true"
+                        className="h-1.5 w-1.5 rounded-full bg-[#F1641E]"
+                      />
+                      Growth prioritization
                     </span>
 
-                    <span className="rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                      ✓ Outcome tracking
+                    <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50/70 px-3 py-2 dark:border-indigo-900 dark:bg-indigo-950/30">
+                      <span
+                        aria-hidden="true"
+                        className="h-1.5 w-1.5 rounded-full bg-[#F1641E]"
+                      />
+                      Outcome tracking
                     </span>
                   </div>
 
@@ -1299,7 +1311,7 @@ function App() {
                         <button
                           type="submit"
                           disabled={loading}
-                          className="mt-3 w-full cursor-pointer rounded-xl border border-indigo-200 bg-white px-5 py-3 font-semibold text-indigo-700 transition hover:border-indigo-400 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-indigo-900 dark:bg-slate-950 dark:text-indigo-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40"
+                          className="mt-3 w-full cursor-pointer rounded-xl border border-indigo-300 bg-indigo-50 px-5 py-3 font-semibold text-indigo-800 shadow-sm transition hover:border-indigo-500 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200 dark:hover:border-indigo-600 dark:hover:bg-indigo-950/80"
                         >
                           {loading
                             ? "Analyzing..."
@@ -1333,8 +1345,8 @@ function App() {
                         </h3>
                       </div>
 
-                      <div className="rounded-xl bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
-                        Seller Mode
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                        Illustrative preview
                       </div>
                     </div>
 
@@ -1419,14 +1431,14 @@ function App() {
 
                     <div className="mt-5 rounded-2xl bg-slate-950 p-4 text-white dark:bg-black">
                       <div className="flex items-center gap-3">
-                        <div className="relative h-3 w-3">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
-                          <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-400" />
-                        </div>
+                        <span
+                          aria-hidden="true"
+                          className="h-3 w-3 rounded-full bg-indigo-400"
+                        />
 
                         <div>
                           <p className="text-sm font-semibold">
-                            Lighthouse is working
+                            Example Lighthouse workflow
                           </p>
 
                           <p className="mt-1 text-xs text-slate-400">
@@ -1532,7 +1544,7 @@ function App() {
 
                   <div className="mt-6 rounded-2xl border border-indigo-100 bg-indigo-50 p-5 dark:border-indigo-900 dark:bg-indigo-950/30">
                     <p className="font-semibold text-indigo-900 dark:text-indigo-200">
-                      ChatGPT gives you answers.
+                      General AI chat tools give you answers.
                     </p>
 
                     <p className="mt-2 text-sm leading-6 text-indigo-700 dark:text-indigo-300">
@@ -1584,50 +1596,6 @@ function App() {
               </div>
             </section>
 
-            <section className="py-16">
-              <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 p-8 text-center dark:border-slate-700 dark:bg-slate-900/50">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  Seller stories
-                </p>
-
-                <h2 className="mt-3 text-2xl font-bold">
-                  Real seller results will live here.
-                </h2>
-
-                <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-500 dark:text-slate-400">
-                  This section is intentionally reserved for verified feedback,
-                  testimonials, and measurable results from real Etsy sellers
-                  after customer validation begins.
-                </p>
-
-                <div className="mt-6 grid gap-4 md:grid-cols-3">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950">
-                    <p className="font-semibold">Seller testimonial</p>
-
-                    <p className="mt-2 text-sm text-slate-400">
-                      Reserved for a real customer quote.
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950">
-                    <p className="font-semibold">Before & after result</p>
-
-                    <p className="mt-2 text-sm text-slate-400">
-                      Reserved for a measurable shop improvement.
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950">
-                    <p className="font-semibold">Time saved</p>
-
-                    <p className="mt-2 text-sm text-slate-400">
-                      Reserved for verified workflow savings.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
             <section
               id="pricing"
               className="scroll-mt-12 border-t border-slate-200 py-20 dark:border-slate-800"
@@ -1664,7 +1632,9 @@ function App() {
                     <li>✓ 3 opportunity analyses per month</li>
                     <li>✓ Basic opportunity scoring</li>
                     <li>✓ Limited execution preview</li>
-                    <li>✓ No continuous monitoring</li>
+                    <li className="text-slate-400 dark:text-slate-500">
+                      — Continuous monitoring not included
+                    </li>
                   </ul>
 
                   <button
@@ -1765,7 +1735,7 @@ function App() {
                     onClick={handleOpenShopPlan}
                     className="cursor-pointer rounded-xl bg-indigo-500 px-6 py-3.5 font-semibold text-white transition hover:bg-indigo-400"
                   >
-                    Build Weekly Growth Plan
+                    Build My Weekly Growth Plan
                   </button>
 
                   <button
@@ -1773,7 +1743,7 @@ function App() {
                     onClick={scrollToAnalysis}
                     className="cursor-pointer rounded-xl border border-slate-700 bg-slate-900 px-6 py-3.5 font-semibold text-white transition hover:bg-slate-800"
                   >
-                    Analyze an Opportunity
+                    Analyze a New Opportunity
                   </button>
                 </div>
 
