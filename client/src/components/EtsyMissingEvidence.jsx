@@ -23,6 +23,7 @@ function EtsyMissingEvidence({
   onChange,
   onSubmit,
   loading = false,
+  isSampleData = false,
 }) {
   const missingItems = Array.isArray(items) ? items : [];
 
@@ -46,16 +47,17 @@ function EtsyMissingEvidence({
       >
         <div className="border-b border-emerald-200 bg-emerald-100/70 px-6 py-5 dark:border-emerald-900 dark:bg-emerald-950/40">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-            Traffic data added
+            {isSampleData ? "Sample traffic added" : "Traffic data added"}
           </p>
 
           <h3 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
-            Conversion analysis is now available
+            {isSampleData ? "Sample conversion analysis is now available" : "Conversion analysis is now available"}
           </h3>
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-            Lighthouse now has traffic and sales from the same reporting period,
-            so it can evaluate conversion without guessing.
+            {isSampleData
+              ? "Your test traffic number is combined with sample sales for the demo reporting period. This is not an analysis of your real shop."
+              : "Lighthouse now has traffic and sales from the same reporting period, so it can evaluate conversion without guessing."}
           </p>
         </div>
 
@@ -71,7 +73,7 @@ function EtsyMissingEvidence({
                 </p>
 
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  Seller-provided traffic evidence was accepted.
+                  {isSampleData ? "Sample traffic input was accepted." : "Seller-provided traffic evidence was accepted."}
                 </p>
               </div>
 
@@ -104,7 +106,7 @@ function EtsyMissingEvidence({
     >
       <div className="border-b border-sky-200 bg-sky-100/70 px-6 py-5 dark:border-sky-900 dark:bg-sky-950/40">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300">
-          Etsy data needs your input
+          {isSampleData ? "Sample data needs your input" : "Etsy data needs your input"}
         </p>
 
         <h3 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
@@ -112,9 +114,9 @@ function EtsyMissingEvidence({
         </h3>
 
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-          Lighthouse imported the available listing data from Etsy. Add the
-          missing traffic for the same reporting period so conversion can be
-          evaluated without guessing.
+          {isSampleData
+            ? "The sample shop is loaded. Enter a test traffic number, such as 200, to explore the analysis. No data was imported from an Etsy account."
+            : "Lighthouse imported the available listing data from Etsy. Add the missing traffic for the same reporting period so conversion can be evaluated without guessing."}
         </p>
       </div>
 
@@ -161,7 +163,7 @@ function EtsyMissingEvidence({
                 </div>
 
                 <span className="w-fit rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                  Seller input required
+                  {isSampleData ? "Sample input required" : "Seller input required"}
                 </span>
               </div>
 
@@ -190,8 +192,9 @@ function EtsyMissingEvidence({
                 />
 
                 <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  Use the traffic number for this exact period so Lighthouse
-                  compares views and sales from the same window.
+                  {isSampleData
+                    ? "For this demo, try 200 views. For a real shop review, use traffic and sales from the same reporting period."
+                    : "Use the traffic number for this exact period so Lighthouse compares views and sales from the same window."}
                 </p>
               </div>
             </div>
