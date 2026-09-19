@@ -5,6 +5,7 @@ function buildShopPlanResponse(shopPlanId, state) {
     shopPlanId,
 
     shopName: plan?.shopName ?? state.shopData?.shopName ?? null,
+    reportingPeriod: state.shopData?.reportingPeriod ?? null,
 
     planType: plan?.planType ?? null,
 

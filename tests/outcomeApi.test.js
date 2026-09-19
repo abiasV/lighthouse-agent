@@ -1,5 +1,6 @@
 import test, { after, before } from "node:test";
 import assert from "node:assert/strict";
+import { sampleManualPeriod } from "./fixtures/reportingPeriods.js";
 
 import { spawn } from "node:child_process";
 import net from "node:net";
@@ -114,6 +115,8 @@ async function createCompletedOpportunityAnalysis() {
 
 async function createExecutedShopPlan() {
   const planResult = await postJson("/api/shop/plan", {
+    reportingPeriod: sampleManualPeriod,
+    periodConfirmed: true,
     shopName: "Maya Studio",
     weeklyAvailableMinutes: 180,
     listings: [

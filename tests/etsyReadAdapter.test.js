@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { sampleTrafficPeriod } from "./fixtures/reportingPeriods.js";
 
 import {
   DATA_AVAILABILITY,
@@ -215,6 +216,8 @@ test("attaches seller period views without mutating the original snapshot", () =
     {
       listingId: "listing_1",
       periodViews: 700,
+      period: sampleTrafficPeriod,
+      periodConfirmed: true,
     },
   ]);
 
@@ -265,6 +268,8 @@ test("leaves listings without seller traffic evidence unavailable", () => {
     {
       listingId: "listing_1",
       periodViews: 500,
+      period: sampleTrafficPeriod,
+      periodConfirmed: true,
     },
   ]);
 
@@ -315,12 +320,18 @@ test("maps available seller traffic and Etsy sales into the existing shop schema
     {
       listingId: "listing_1",
       periodViews: 700,
+      period: sampleTrafficPeriod,
+      periodConfirmed: true,
     },
   ]);
 
   const shopData = mapEtsySnapshotToShopData(withSellerViews, 180);
 
   assert.deepEqual(shopData, {
+    reportingPeriod: {
+      startDate: "2026-08-13", endDate: "2026-09-11", timeZone: "UTC", days: 30,
+      previousStartDate: "2026-07-14", previousEndDate: "2026-08-12",
+    },
     shopName: "Maya Studio",
 
     weeklyAvailableMinutes: 180,

@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { sampleTrafficPeriod } from "./fixtures/reportingPeriods.js";
 
 import {
   attachSellerPeriodViews,
@@ -44,6 +45,8 @@ test("seller traffic evidence enables low-conversion detection", () => {
     {
       listingId: "listing_1",
       periodViews: 700,
+      period: sampleTrafficPeriod,
+      periodConfirmed: true,
     },
   ]);
 

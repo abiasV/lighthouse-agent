@@ -1,3 +1,5 @@
+import { assertSellerPeriod, validateEtsyReportingPeriod } from "../../../shared/reportingPeriod.js";
+
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const DATA_AVAILABILITY = {
@@ -183,19 +185,23 @@ function attachSellerPeriodViews(snapshot, sellerInputs) {
     throw new Error("INVALID_SELLER_INPUTS");
   }
 
+  validateEtsyReportingPeriod(snapshot.period);
+
   const sellerInputByListingId = new Map();
 
   for (const input of sellerInputs) {
     const listingId = String(input?.listingId ?? "");
-    const periodViews = Number(input?.periodViews);
+    const periodViews = input?.periodViews;
 
     if (!listingId) {
       throw new Error("INVALID_SELLER_LISTING_ID");
     }
 
-    if (!Number.isFinite(periodViews) || periodViews < 0) {
+    if (!Number.isInteger(periodViews) || periodViews < 0) {
       throw new Error("INVALID_PERIOD_VIEWS");
     }
+
+    assertSellerPeriod(snapshot.period, input);
 
     sellerInputByListingId.set(listingId, periodViews);
   }
@@ -272,6 +278,8 @@ function mapEtsySnapshotToShopData(snapshot, weeklyAvailableMinutes = null) {
 
   return {
     shopName: snapshot.shopName,
+
+    reportingPeriod: validateEtsyReportingPeriod(snapshot.period),
 
     weeklyAvailableMinutes:
       typeof weeklyAvailableMinutes === "number"

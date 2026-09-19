@@ -1,5 +1,6 @@
 import test, { after, before } from "node:test";
 import assert from "node:assert/strict";
+import { sampleManualPeriod } from "./fixtures/reportingPeriods.js";
 
 import { spawn } from "node:child_process";
 import net from "node:net";
@@ -103,8 +104,25 @@ after(() => {
   }
 });
 
+test("manual period is required and retained through execution", async () => {
+  const body = { shopName: "Period test", listings: [{ id: "l", title: "Test", views: 200, sales: 5, trendPercent: null }] };
+  const missing = await postJson("/api/shop/plan", body);
+  assert.equal(missing.response.status, 400);
+  assert.equal(missing.data.error, "REPORTING_PERIOD_REQUIRED");
+  const unconfirmed = await postJson("/api/shop/plan", { ...body, reportingPeriod: sampleManualPeriod });
+  assert.equal(unconfirmed.response.status, 400);
+  const created = await postJson("/api/shop/plan", { ...body, reportingPeriod: sampleManualPeriod, periodConfirmed: true });
+  assert.equal(created.response.status, 200);
+  assert.equal(created.data.reportingPeriod.startDate, sampleManualPeriod.startDate);
+  const executed = await postJson("/api/shop/execute", { shopPlanId: created.data.shopPlanId });
+  assert.equal(executed.response.status, 200);
+  assert.deepEqual(executed.data.reportingPeriod, created.data.reportingPeriod);
+});
+
 test("shop plan API includes an approval proposal immediately for a weak-conversion listing", async () => {
   const planResult = await postJson("/api/shop/plan", {
+    reportingPeriod: sampleManualPeriod,
+    periodConfirmed: true,
     shopName: "Maya Studio",
     weeklyAvailableMinutes: 180,
     listings: [
@@ -179,6 +197,8 @@ test("shop plan API includes an approval proposal immediately for a weak-convers
 
 test("approving a weak-conversion proposal returns an approved recovery package with exact approved values", async () => {
   const planResult = await postJson("/api/shop/plan", {
+    reportingPeriod: sampleManualPeriod,
+    periodConfirmed: true,
     shopName: "Maya Studio",
     weeklyAvailableMinutes: 180,
     listings: [
@@ -261,6 +281,8 @@ test("approving a weak-conversion proposal returns an approved recovery package 
 
 test("rejecting a weak-conversion proposal does not create an approved recovery package", async () => {
   const planResult = await postJson("/api/shop/plan", {
+    reportingPeriod: sampleManualPeriod,
+    periodConfirmed: true,
     shopName: "Maya Studio",
     weeklyAvailableMinutes: 180,
     listings: [

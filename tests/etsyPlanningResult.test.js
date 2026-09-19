@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { sampleTrafficPeriod } from "./fixtures/reportingPeriods.js";
 
 import { buildEtsyReadSnapshot } from "../src/integrations/etsy/buildEtsyReadSnapshot.js";
 
@@ -47,6 +48,8 @@ test("builds shopData, plan, and missingEvidence from the same updated snapshot"
       {
         listingId: "listing_1",
         periodViews: 700,
+        period: sampleTrafficPeriod,
+        periodConfirmed: true,
       },
     ],
 
@@ -104,6 +107,8 @@ test("seller evidence removes the matching missing-evidence gap", () => {
       {
         listingId: "listing_1",
         periodViews: 700,
+        period: sampleTrafficPeriod,
+        periodConfirmed: true,
       },
     ],
 
@@ -123,6 +128,8 @@ test("returns the exact shopData object used to generate the plan", () => {
       {
         listingId: "listing_1",
         periodViews: 700,
+        period: sampleTrafficPeriod,
+        periodConfirmed: true,
       },
     ],
 
@@ -168,6 +175,8 @@ test("rejects seller input for an unknown listing", () => {
           {
             listingId: "missing_listing",
             periodViews: 700,
+            period: sampleTrafficPeriod,
+            periodConfirmed: true,
           },
         ],
 

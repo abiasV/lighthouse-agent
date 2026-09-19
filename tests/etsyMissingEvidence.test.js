@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { sampleTrafficPeriod } from "./fixtures/reportingPeriods.js";
 
 import {
   attachSellerPeriodViews,
@@ -73,6 +74,8 @@ test("does not report period traffic as missing after seller supplies it", () =>
     {
       listingId: "listing_1",
       periodViews: 700,
+      period: sampleTrafficPeriod,
+      periodConfirmed: true,
     },
   ]);
 

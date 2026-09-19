@@ -22,6 +22,8 @@ import {
 } from "../state/shopPlanSession.js";
 
 import buildEtsyPlanningResult from "../integrations/etsy/buildEtsyPlanningResult.js";
+import normalizeManualShopData from "../utils/normalizeManualShopData.js";
+import { PERIOD_ERRORS } from "../../shared/reportingPeriod.js";
 
 const router = express.Router();
 
@@ -73,16 +75,7 @@ router.post("/plan", (req, res) => {
       });
     }
 
-    const normalizedShopData = {
-      shopName: String(shopData.shopName).trim(),
-
-      weeklyAvailableMinutes:
-        typeof shopData.weeklyAvailableMinutes === "number"
-          ? shopData.weeklyAvailableMinutes
-          : null,
-
-      listings: shopData.listings,
-    };
+    const normalizedShopData = normalizeManualShopData(shopData);
 
     const plan = generateExecutionPlan(normalizedShopData);
 
@@ -100,10 +93,15 @@ router.post("/plan", (req, res) => {
 
     return res.json(storedPlan.response);
   } catch (error) {
+    const message = PERIOD_ERRORS[error.message] ??
+      (error.message === "INVALID_MANUAL_LISTING_METRICS"
+        ? "Enter whole non-negative views and sales. Leave trend blank if unknown, or enter a percentage of at least -100."
+        : null);
+    if (message) return res.status(400).json({ error: error.message, message });
     console.error(error);
 
     return res.status(500).json({
-      error: "SHOP_PLAN_FAILED",
+        error: "SHOP_PLAN_FAILED",
     });
   }
 });
@@ -387,6 +385,7 @@ router.post("/etsy/plan", (req, res) => {
     });
   } catch (error) {
     const errorMessages = {
+      ...PERIOD_ERRORS,
       INVALID_ETSY_SNAPSHOT: "The Etsy snapshot is missing or invalid.",
 
       INVALID_SELLER_INPUTS: "Seller inputs must be provided as an array.",

@@ -12,6 +12,7 @@ function formatUtcDate(isoString) {
   return new Intl.DateTimeFormat("en-CA", {
     month: "short",
     day: "numeric",
+    year: "numeric",
     timeZone: "UTC",
   }).format(date);
 }
@@ -24,6 +25,8 @@ function EtsyMissingEvidence({
   onSubmit,
   loading = false,
   isSampleData = false,
+  periodConfirmed = false,
+  onPeriodConfirmationChange,
 }) {
   const missingItems = Array.isArray(items) ? items : [];
 
@@ -96,7 +99,7 @@ function EtsyMissingEvidence({
 
     const numericValue = Number(value);
 
-    return !Number.isFinite(numericValue) || numericValue < 0;
+    return !Number.isInteger(numericValue) || numericValue < 0;
   });
 
   return (
@@ -173,7 +176,7 @@ function EtsyMissingEvidence({
                   className="block text-sm font-semibold text-slate-800 dark:text-slate-200"
                 >
                   {currentStart && currentEnd
-                    ? `Views from ${currentStart} to ${currentEnd}`
+                    ? `${isSampleData ? "Sample reporting period — " : ""}Views from ${currentStart} to ${currentEnd} (${item.resolution?.period?.timeZone ?? "unknown time zone"})`
                     : "Views for the reporting period"}
                 </label>
 
@@ -201,10 +204,18 @@ function EtsyMissingEvidence({
           );
         })}
 
+        <label className="flex items-start gap-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
+          <input type="checkbox" checked={periodConfirmed} className="mt-1"
+            onChange={(event) => onPeriodConfirmationChange?.(event.target.checked)} />
+          {isSampleData
+            ? "I am using test traffic numbers for the sample reporting period shown above."
+            : "I confirm these traffic numbers cover exactly the dates and time zone displayed above. If my source report uses different dates or a different time zone, I will not submit it here."}
+        </label>
+
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={loading || hasInvalidInput}
+            disabled={loading || hasInvalidInput || !periodConfirmed}
             className="rounded-xl bg-sky-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Updating analysis..." : "Update analysis"}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import TaskOutcomeForm from "./TaskOutcomeForm";
 import EtsyMissingEvidence from "./EtsyMissingEvidence";
+import { defaultReportingPeriod, normalizeReportingPeriod, todayInTimeZone, shiftDate, PERIOD_ERRORS } from "../../../shared/reportingPeriod.js";
 
 function createEmptyListing() {
   return {
@@ -35,7 +36,7 @@ async function readJsonResponse(response) {
 
   if (!response.ok) {
     throw new Error(
-      data.error || `Request failed with status ${response.status}.`,
+      data.message || data.error || `Request failed with status ${response.status}.`,
     );
   }
 
@@ -43,6 +44,9 @@ async function readJsonResponse(response) {
 }
 
 function ShopWeeklyPlan({ onBack }) {
+  const [reportingPeriod, setReportingPeriod] = useState(() => defaultReportingPeriod());
+  const [periodConfirmed, setPeriodConfirmed] = useState(false);
+  const [etsyPeriodConfirmed, setEtsyPeriodConfirmed] = useState(false);
   const [shopName, setShopName] = useState("");
 
   const [weeklyAvailableMinutes, setWeeklyAvailableMinutes] = useState("180");
@@ -137,6 +141,8 @@ function ShopWeeklyPlan({ onBack }) {
     }
 
     setDataSourceMode(mode);
+    setPeriodConfirmed(false);
+    setEtsyPeriodConfirmed(false);
 
     setPlan(null);
 
@@ -151,6 +157,7 @@ function ShopWeeklyPlan({ onBack }) {
   }
 
   function updateListing(id, field, value) {
+    setPeriodConfirmed(false);
     setListings((currentListings) =>
       currentListings.map((listing) =>
         listing.id === id
@@ -220,6 +227,7 @@ function ShopWeeklyPlan({ onBack }) {
       setEtsyPlanningResult(data);
 
       setEtsyViewInputs({});
+      setEtsyPeriodConfirmed(false);
 
       setPlan(null);
       showToast("Sample shop data loaded");
@@ -238,6 +246,7 @@ function ShopWeeklyPlan({ onBack }) {
   }
 
   function handleEtsyViewChange(listingId, value) {
+    setEtsyPeriodConfirmed(false);
     setEtsyViewInputs((currentValues) => ({
       ...currentValues,
       [listingId]: value,
@@ -251,9 +260,16 @@ function ShopWeeklyPlan({ onBack }) {
       return;
     }
 
+    if (!etsyPeriodConfirmed) {
+      setError(PERIOD_ERRORS.SELLER_PERIOD_CONFIRMATION_REQUIRED);
+      return;
+    }
+
     const sellerInputs = etsyPlanningResult.missingEvidence.map((item) => ({
       listingId: item.listingId,
       periodViews: Number(etsyViewInputs[item.listingId]),
+      period: item.resolution.period,
+      periodConfirmed: etsyPeriodConfirmed,
     }));
 
     try {
@@ -303,9 +319,9 @@ function ShopWeeklyPlan({ onBack }) {
       .map((listing) => ({
         id: listing.id,
         title: listing.title.trim(),
-        views: Number(listing.views) || 0,
-        sales: Number(listing.sales) || 0,
-        trendPercent: Number(listing.trendPercent) || 0,
+        views: listing.views.trim() === "" ? null : Number(listing.views),
+        sales: listing.sales.trim() === "" ? null : Number(listing.sales),
+        trendPercent: listing.trendPercent.trim() === "" ? null : Number(listing.trendPercent),
       }));
   }
 
@@ -329,6 +345,8 @@ function ShopWeeklyPlan({ onBack }) {
     }
 
     try {
+      normalizeReportingPeriod(reportingPeriod);
+      if (!periodConfirmed) throw new Error("REPORTING_PERIOD_CONFIRMATION_REQUIRED");
       setLoading(true);
       setError("");
 
@@ -341,6 +359,8 @@ function ShopWeeklyPlan({ onBack }) {
 
         body: JSON.stringify({
           shopName: trimmedShopName,
+          reportingPeriod,
+          periodConfirmed,
 
           weeklyAvailableMinutes: Number(weeklyAvailableMinutes) || null,
 
@@ -367,7 +387,7 @@ function ShopWeeklyPlan({ onBack }) {
         });
       }, 100);
     } catch (requestError) {
-      setError(requestError.message);
+      setError(PERIOD_ERRORS[requestError.message] || requestError.message);
     } finally {
       setLoading(false);
     }
@@ -1259,6 +1279,21 @@ function ShopWeeklyPlan({ onBack }) {
       ? etsyListingCount
       : activeListingCount;
 
+  let manualPeriodPreview = null;
+  let manualPeriodError = "";
+  let latestCompletedDate = "";
+  try {
+    latestCompletedDate = shiftDate(todayInTimeZone(reportingPeriod.timeZone), -1);
+    manualPeriodPreview = normalizeReportingPeriod(reportingPeriod);
+  } catch (periodError) {
+    manualPeriodError = PERIOD_ERRORS[periodError.message] || periodError.message;
+  }
+
+  function updateReportingPeriod(field, value) {
+    setReportingPeriod((current) => ({ ...current, [field]: value }));
+    setPeriodConfirmed(false);
+  }
+
   return (
     <section className="py-12 text-slate-900 dark:text-slate-100">
       {toast && (
@@ -1462,6 +1497,53 @@ function ShopWeeklyPlan({ onBack }) {
                   </div>
                 </div>
 
+                <fieldset className="mt-6 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+                  <legend className="px-2 font-semibold">Reporting period</legend>
+                  <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">
+                    Use the same dates and source-report time zone for views and sales.
+                    This data window is separate from your weekly action plan.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-sm font-medium">
+                      Start date (inclusive)
+                      <input type="date" required value={reportingPeriod.startDate}
+                        max={reportingPeriod.endDate || latestCompletedDate}
+                        onChange={(event) => updateReportingPeriod("startDate", event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-950" />
+                    </label>
+                    <label className="text-sm font-medium">
+                      End date (inclusive)
+                      <input type="date" required value={reportingPeriod.endDate}
+                        min={reportingPeriod.startDate} max={latestCompletedDate}
+                        onChange={(event) => updateReportingPeriod("endDate", event.target.value)}
+                        className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-950" />
+                    </label>
+                  </div>
+                  <label className="mt-3 block text-sm font-medium">
+                    Source-report time zone
+                    <input required list="reporting-time-zones" value={reportingPeriod.timeZone}
+                      onChange={(event) => updateReportingPeriod("timeZone", event.target.value)}
+                      placeholder="Example: America/Toronto"
+                      className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-950" />
+                  </label>
+                  <datalist id="reporting-time-zones">
+                    <option value="UTC" /><option value="America/Toronto" />
+                    <option value="America/New_York" /><option value="America/Los_Angeles" />
+                    <option value="Europe/London" />
+                  </datalist>
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    Match the report you copied; do not assume your browser or home time zone.
+                  </p>
+                  {manualPeriodPreview && (
+                    <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                      {manualPeriodPreview.days} completed days. Trend compares these dates with{" "}
+                      {manualPeriodPreview.previousStartDate} to {manualPeriodPreview.previousEndDate}{" "}
+                      ({manualPeriodPreview.timeZone}). Leave trend blank if you do not have this comparison.
+                    </p>
+                  )}
+                  {manualPeriodError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{manualPeriodError}</p>}
+                </fieldset>
+
                 <div className="mt-7 flex items-center justify-between">
                   <div>
                     <p className="font-semibold text-slate-900 dark:text-white">
@@ -1469,8 +1551,8 @@ function ShopWeeklyPlan({ onBack }) {
                     </p>
 
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      Prototype input: recent views, sales, and performance
-                      trend.
+                      Views and sales for the selected period; sales trend
+                      compared with the preceding equal-length period.
                     </p>
                   </div>
 
@@ -1536,6 +1618,8 @@ function ShopWeeklyPlan({ onBack }) {
                               type="number"
                               min="0"
                               value={listing.views}
+                              required={Boolean(listing.title.trim())}
+                              step="1"
                               onChange={(event) =>
                                 updateListing(
                                   listing.id,
@@ -1556,6 +1640,8 @@ function ShopWeeklyPlan({ onBack }) {
                               type="number"
                               min="0"
                               value={listing.sales}
+                              required={Boolean(listing.title.trim())}
+                              step="1"
                               onChange={(event) =>
                                 updateListing(
                                   listing.id,
@@ -1569,12 +1655,14 @@ function ShopWeeklyPlan({ onBack }) {
 
                           <div>
                             <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
-                              Trend %
+                              Sales trend % (optional)
                             </label>
 
                             <input
                               type="number"
                               value={listing.trendPercent}
+                              min="-100"
+                              step="any"
                               onChange={(event) =>
                                 updateListing(
                                   listing.id,
@@ -1591,6 +1679,13 @@ function ShopWeeklyPlan({ onBack }) {
                   })}
                 </div>
 
+                <label className="mt-5 flex items-start gap-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
+                  <input type="checkbox" checked={periodConfirmed}
+                    onChange={(event) => setPeriodConfirmed(event.target.checked)} className="mt-1" />
+                  I confirm all views and sales use the selected dates and time zone,
+                  and any sales trend compares with the previous period shown above.
+                </label>
+
                 {error && (
                   <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
                     {error}
@@ -1602,6 +1697,7 @@ function ShopWeeklyPlan({ onBack }) {
                   disabled={
                     loading ||
                     executionLoading ||
+                    !periodConfirmed || !manualPeriodPreview ||
                     approvalLoadingTaskId !== null
                   }
                   className="mt-6 w-full cursor-pointer rounded-xl bg-indigo-600 px-5 py-3.5 font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
@@ -1667,11 +1763,22 @@ function ShopWeeklyPlan({ onBack }) {
           onChange={handleEtsyViewChange}
           onSubmit={handleEtsyEvidenceSubmit}
           loading={etsyLoading}
+          periodConfirmed={etsyPeriodConfirmed}
+          onPeriodConfirmationChange={setEtsyPeriodConfirmed}
         />
       )}
 
       {plan?.tasks?.length > 0 && (
         <div id="weekly-plan-results" className="scroll-mt-8 pt-12">
+          {plan.reportingPeriod && (
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-700 dark:bg-slate-900">
+              <p className="font-semibold">{isSampleData ? "Sample reporting period" : "Reporting period used"}</p>
+              <p className="mt-1">{plan.reportingPeriod.startDate} to {plan.reportingPeriod.endDate}{" "}
+                ({plan.reportingPeriod.timeZone}; {plan.reportingPeriod.days} days)</p>
+              <p className="mt-1 text-slate-600 dark:text-slate-300">Trend comparison: {plan.reportingPeriod.previousStartDate}{" "}
+                to {plan.reportingPeriod.previousEndDate}. This period stays attached to this plan.</p>
+            </div>
+          )}
           <section>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">
               {isGeneralReviewOnly ? "This week's shop review" : "This week's priorities"}

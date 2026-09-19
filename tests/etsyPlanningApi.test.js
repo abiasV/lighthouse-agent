@@ -1,5 +1,6 @@
 import test, { after, before } from "node:test";
 import assert from "node:assert/strict";
+import { sampleTrafficPeriod } from "./fixtures/reportingPeriods.js";
 import { spawn } from "node:child_process";
 import net from "node:net";
 import path from "node:path";
@@ -150,6 +151,21 @@ after(() => {
   }
 });
 
+test("Etsy API rejects mismatched evidence periods before creating a plan", async () => {
+  const input = { listingId: "listing_1", periodViews: 200, periodConfirmed: true, period: sampleTrafficPeriod };
+  for (const period of [undefined, { ...sampleTrafficPeriod, timeZone: "America/Toronto" },
+    { ...sampleTrafficPeriod, currentStart: "2026-08-14T00:00:00.000Z" }]) {
+    const result = await postJson("/api/shop/etsy/plan", { snapshot: createSnapshot(), sellerInputs: [{ ...input, period }] });
+    assert.equal(result.response.status, 400);
+    assert.equal(result.data.error, "SELLER_PERIOD_MISMATCH");
+    assert.equal(result.data.sessionPlan, undefined);
+  }
+  const result = await postJson("/api/shop/etsy/plan", { snapshot: createSnapshot(), sellerInputs: [input] });
+  assert.equal(result.response.status, 200);
+  assert.deepEqual(result.data.shopData.reportingPeriod, result.data.sessionPlan.reportingPeriod);
+  assert.equal(result.data.sessionPlan.reportingPeriod.endDate, "2026-09-11");
+});
+
 test("Etsy planning API builds a plan from normalized snapshot and seller evidence", async () => {
   const result = await postJson("/api/shop/etsy/plan", {
     snapshot: createSnapshot(),
@@ -158,6 +174,8 @@ test("Etsy planning API builds a plan from normalized snapshot and seller eviden
       {
         listingId: "listing_1",
         periodViews: 700,
+        period: sampleTrafficPeriod,
+        periodConfirmed: true,
       },
     ],
 
@@ -211,6 +229,8 @@ test("completed Etsy evidence creates a shop session that can enter the normal e
       {
         listingId: "listing_1",
         periodViews: 700,
+        period: sampleTrafficPeriod,
+        periodConfirmed: true,
       },
     ],
 
@@ -254,6 +274,8 @@ test("Etsy planning API rejects seller input for an unknown listing", async () =
       {
         listingId: "missing_listing",
         periodViews: 700,
+        period: sampleTrafficPeriod,
+        periodConfirmed: true,
       },
     ],
 
