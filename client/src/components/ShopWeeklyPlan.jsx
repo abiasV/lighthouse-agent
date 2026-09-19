@@ -1161,7 +1161,62 @@ function ShopWeeklyPlan({ onBack }) {
       );
     }
 
-    return null;
+    if (task.result.type === "SHOP_GENERAL_REVIEW") {
+      const { summary, reviewedListingCount } = task.result;
+
+      return (
+        <article className="overflow-hidden rounded-3xl border-2 border-indigo-200 bg-indigo-50/40 shadow-sm dark:border-indigo-800 dark:bg-slate-900">
+          <div className="border-b border-indigo-200 bg-indigo-100/70 px-6 py-5 dark:border-indigo-800 dark:bg-indigo-950/40">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">
+              Shop review result
+            </p>
+            <h4 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
+              {task.title}
+            </h4>
+          </div>
+          <div className="space-y-5 p-6">
+            <p className="text-base font-semibold leading-7 text-slate-900 dark:text-slate-100">
+              {typeof summary === "string" && summary.trim()
+                ? summary
+                : "The review returned no summary. Update your shop data and try again."}
+            </p>
+            {Number.isInteger(reviewedListingCount) &&
+              reviewedListingCount >= 0 && (
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  Listings reviewed: {reviewedListingCount}
+                </p>
+              )}
+            {task.measurementPlan && (
+              <div className="rounded-2xl border border-indigo-200 bg-white p-4 dark:border-indigo-800 dark:bg-slate-950">
+                <p className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                  Recommended next step
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-200">
+                  {task.measurementPlan}
+                </p>
+              </div>
+            )}
+            {task.result.didModifyShop === false && (
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                No Etsy listing was changed.
+              </p>
+            )}
+          </div>
+        </article>
+      );
+    }
+
+    return (
+      <article className="rounded-3xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/30">
+        <h4 className="text-xl font-bold text-slate-900 dark:text-white">
+          {task.title}
+        </h4>
+        <p className="mt-3 text-sm leading-6 text-amber-800 dark:text-amber-300">
+          A result was received, but this page cannot display its format yet.
+          The detailed report is unavailable.
+        </p>
+      </article>
+    );
   }
 
   const readySafeActions = hasReadySafeActions();
@@ -1762,14 +1817,14 @@ function ShopWeeklyPlan({ onBack }) {
                   </div>
                 </details>
 
-                {task.result && (
+                {task.status === "COMPLETE" && task.result && (
                   <div className="mt-5 rounded-2xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-950/30">
                     <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300">
-                      AI research complete
+                      Task execution complete
                     </p>
 
                     <p className="mt-1 text-sm leading-6 text-indigo-700 dark:text-indigo-300">
-                      Detailed result is shown below.
+                      See the result section below for report availability.
                     </p>
                   </div>
                 )}
@@ -1795,7 +1850,7 @@ function ShopWeeklyPlan({ onBack }) {
           {completedAiTasks.length > 0 && (
             <section id="execution-results" className="mt-10 scroll-mt-8">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-300">
-                AI Research Results
+                Review and research results
               </p>
 
               <h3 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
