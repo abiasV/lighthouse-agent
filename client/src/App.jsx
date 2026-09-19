@@ -1665,7 +1665,7 @@ function App() {
               </div>
 
               <div className="mt-12 grid gap-6 lg:grid-cols-3">
-                <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <p className="text-sm font-semibold text-slate-500">Free</p>
 
                   <div className="mt-3">
@@ -1677,7 +1677,7 @@ function App() {
                     For sellers exploring Lighthouse.
                   </p>
 
-                  <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                  <ul className="mt-6 flex-1 space-y-3 text-sm text-slate-700 dark:text-slate-300">
                     <li>✓ 3 opportunity analyses per month</li>
                     <li>✓ Basic opportunity scoring</li>
                     <li>✓ Limited execution preview</li>
@@ -1695,7 +1695,7 @@ function App() {
                   </button>
                 </div>
 
-                <div className="relative rounded-3xl border-2 border-indigo-500 bg-white p-7 shadow-xl shadow-indigo-100 dark:bg-slate-900 dark:shadow-none">
+                <div className="relative flex h-full flex-col rounded-3xl border-2 border-indigo-500 bg-white p-7 shadow-xl shadow-indigo-100 dark:bg-slate-900 dark:shadow-none">
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white">
                     Most Popular
                   </div>
@@ -1713,7 +1713,7 @@ function App() {
                     For active Etsy sellers who want more execution.
                   </p>
 
-                  <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                  <ul className="mt-6 flex-1 space-y-3 text-sm text-slate-700 dark:text-slate-300">
                     <li>✓ 30 analyses per month</li>
                     <li>✓ AI execution</li>
                     <li>✓ Prioritized growth actions</li>
@@ -1731,7 +1731,7 @@ function App() {
                   </button>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   <p className="text-sm font-semibold text-slate-500">Pro</p>
 
                   <div className="mt-3">
@@ -1743,7 +1743,7 @@ function App() {
                     For serious sellers with higher usage needs.
                   </p>
 
-                  <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                  <ul className="mt-6 flex-1 space-y-3 text-sm text-slate-700 dark:text-slate-300">
                     <li>✓ Higher monthly usage limits</li>
                     <li>✓ More AI execution credits</li>
                     <li>✓ Multiple opportunity workflows</li>
