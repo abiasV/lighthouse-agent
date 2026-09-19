@@ -1596,6 +1596,55 @@ function App() {
               </div>
             </section>
 
+            <section className="py-16" aria-labelledby="seller-stories-title">
+              <div className="relative overflow-hidden rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-orange-50 p-8 text-center shadow-sm dark:border-indigo-900 dark:from-indigo-950/40 dark:via-slate-900 dark:to-orange-950/20 sm:p-10">
+                <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-indigo-200/40 blur-3xl dark:bg-indigo-800/20" />
+
+                <div className="relative">
+                  <span className="inline-flex rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-white">
+                    Coming soon
+                  </span>
+
+                  <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">
+                    Seller stories
+                  </p>
+
+                  <h2
+                    id="seller-stories-title"
+                    className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl"
+                  >
+                    Real seller results are on the way.
+                  </h2>
+
+                  <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-600 dark:text-slate-400">
+                    We are currently validating Lighthouse with real Etsy
+                    sellers. As verified results become available, this section
+                    will share what sellers found useful and what changed after
+                    they acted.
+                  </p>
+
+                  <div className="mt-7 flex flex-wrap justify-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {[
+                      "Seller feedback",
+                      "Before & after results",
+                      "Verified time saved",
+                    ].map((item) => (
+                      <span
+                        key={item}
+                        className="inline-flex items-center gap-2 rounded-full border border-white bg-white/80 px-4 py-2 shadow-sm dark:border-slate-700 dark:bg-slate-900/80"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="h-1.5 w-1.5 rounded-full bg-[#F1641E]"
+                        />
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <section
               id="pricing"
               className="scroll-mt-12 border-t border-slate-200 py-20 dark:border-slate-800"
