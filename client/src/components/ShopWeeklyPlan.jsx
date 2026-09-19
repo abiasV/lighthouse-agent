@@ -221,7 +221,8 @@ function ShopWeeklyPlan({ onBack }) {
 
       setEtsyViewInputs({});
 
-      showToast("Mock Etsy data loaded");
+      setPlan(null);
+      showToast("Sample shop data loaded");
 
       window.setTimeout(() => {
         document.getElementById("etsy-evidence-section")?.scrollIntoView({
@@ -1222,6 +1223,11 @@ function ShopWeeklyPlan({ onBack }) {
   const readySafeActions = hasReadySafeActions();
 
   const priorityCount = plan?.tasks?.length ?? 0;
+  const listingPriorityCount =
+    plan?.tasks?.filter((task) => task.opportunityType !== "GENERAL_REVIEW")
+      .length ?? 0;
+  const isGeneralReviewOnly = priorityCount > 0 && listingPriorityCount === 0;
+  const isSampleData = dataSourceMode === "ETSY";
 
   const priorityRowWidthClass =
     priorityCount === 1
@@ -1309,12 +1315,11 @@ function ShopWeeklyPlan({ onBack }) {
                 }`}
               >
                 <span className="block text-sm font-bold">
-                  Import from Etsy
+                  Try sample Etsy data
                 </span>
 
                 <span className="mt-1 block text-xs leading-5 opacity-80">
-                  Recommended. Lighthouse imports what it can and asks only for
-                  missing evidence.
+                  Explore the workflow with a sample shop. No Etsy connection needed.
                 </span>
               </button>
 
@@ -1340,16 +1345,16 @@ function ShopWeeklyPlan({ onBack }) {
             <div className="rounded-3xl border border-sky-200 bg-white p-6 shadow-xl shadow-slate-200/50 dark:border-sky-900 dark:bg-slate-900 dark:shadow-none">
               <div className="border-b border-slate-100 pb-5 dark:border-slate-800">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-300">
-                  Etsy import
+                  Sample shop demo
                 </p>
 
                 <h3 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
-                  Import your shop performance
+                  Try a sample shop review
                 </h3>
 
                 <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                  Lighthouse will import the listing data Etsy provides and ask
-                  only for evidence that is still missing.
+                  Load example listings and add a sample traffic number to see
+                  how Lighthouse builds a weekly plan.
                 </p>
               </div>
 
@@ -1380,13 +1385,13 @@ function ShopWeeklyPlan({ onBack }) {
                 className="mt-6 w-full rounded-xl bg-sky-600 px-5 py-3.5 font-semibold text-white shadow-lg shadow-sky-600/20 transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {etsyLoading
-                  ? "Importing Etsy data..."
-                  : "Import Mock Etsy Data"}
+                  ? "Loading sample data..."
+                  : "Load Sample Shop Data"}
               </button>
 
               <p className="mt-3 text-center text-xs leading-5 text-slate-400 dark:text-slate-500">
-                Mock import for local development. No Etsy account is connected
-                yet.
+                Demo data only. No Etsy account is connected. To review your
+                own shop, choose Enter manually.
               </p>
 
               {error && (
@@ -1655,6 +1660,7 @@ function ShopWeeklyPlan({ onBack }) {
 
       {dataSourceMode === "ETSY" && (
         <EtsyMissingEvidence
+          isSampleData={isSampleData}
           items={etsyPlanningResult?.missingEvidence ?? []}
           values={etsyViewInputs}
           shopData={etsyPlanningResult?.shopData}
@@ -1668,19 +1674,22 @@ function ShopWeeklyPlan({ onBack }) {
         <div id="weekly-plan-results" className="scroll-mt-8 pt-12">
           <section>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">
-              This week's priorities
+              {isGeneralReviewOnly ? "This week's shop review" : "This week's priorities"}
             </p>
 
             <h4 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
-              Lighthouse found {plan.tasks.length}{" "}
-              {plan.tasks.length === 1 ? "thing" : "things"} worth focusing on
-              this week.
+              {isGeneralReviewOnly
+                ? "No strong listing priority found this week."
+                : `Lighthouse found ${listingPriorityCount} ${listingPriorityCount === 1 ? "priority" : "priorities"} worth focusing on this week.`}
             </h4>
 
             <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-400">
               Lighthouse analyzed {displayedListingCount}{" "}
-              {displayedListingCount === 1 ? "listing" : "listings"}. Only the
-              strongest signals became priorities this week.
+              {isSampleData ? "sample " : ""}
+              {displayedListingCount === 1 ? "listing" : "listings"}.{" "}
+              {isGeneralReviewOnly
+                ? "The available data does not point to a strong listing-level action. Review the summary and gather more evidence before making changes."
+                : "The strongest current signals are listed below."}
             </p>
 
             <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -1690,7 +1699,7 @@ function ShopWeeklyPlan({ onBack }) {
                   className={`flex w-full ${prioritySummaryWidthClass} basis-72 flex-1 gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-800 dark:bg-emerald-950/20`}
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 font-bold text-white">
-                    {task.priority}
+                    {task.opportunityType === "GENERAL_REVIEW" ? "—" : task.priority}
                   </div>
 
                   <div>
@@ -1714,13 +1723,16 @@ function ShopWeeklyPlan({ onBack }) {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-lg font-bold text-emerald-900 dark:text-emerald-300">
-                    Lighthouse can safely investigate {safeActionCount}{" "}
-                    {safeActionCount === 1 ? "priority" : "priorities"} now.
+                    {isGeneralReviewOnly
+                      ? "A general shop review is available."
+                      : `Lighthouse can investigate ${safeActionCount} ${safeActionCount === 1 ? "task" : "tasks"} now.`}
                   </p>
 
                   <p className="mt-1 text-sm leading-6 text-emerald-800 dark:text-emerald-300">
-                    Lighthouse will run the ready research tasks only. It will
-                    not modify your Etsy shop or spend money.
+                    {isGeneralReviewOnly
+                      ? "Open a review of the available data and what to collect next."
+                      : "Run the ready research tasks to investigate the current signals."}
+                    {isSampleData && " Results in this demo use sample shop data."}
                   </p>
                 </div>
 
@@ -1731,8 +1743,10 @@ function ShopWeeklyPlan({ onBack }) {
                   className="shrink-0 cursor-pointer rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {executionLoading
-                    ? "Running Safe Research..."
-                    : "Run Safe Research"}
+                    ? "Running review..."
+                    : isGeneralReviewOnly
+                      ? "Run Shop Review"
+                      : "Run Safe Research"}
                 </button>
               </div>
             </div>
@@ -1746,7 +1760,9 @@ function ShopWeeklyPlan({ onBack }) {
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-bold text-indigo-600 dark:text-indigo-300">
-                    Priority #{task.priority}
+                    {task.opportunityType === "GENERAL_REVIEW"
+                      ? "General review"
+                      : `Priority #${task.priority}`}
                   </span>
 
                   <span
@@ -1858,8 +1874,9 @@ function ShopWeeklyPlan({ onBack }) {
               </h3>
 
               <p className="mt-2 max-w-3xl leading-7 text-slate-600 dark:text-slate-400">
-                These are the detailed results from the safe research Lighthouse
-                completed for your shop.
+                {isSampleData
+                  ? "These results use sample shop data and are for demonstration only."
+                  : "These are the results from the completed shop review and research tasks."}
               </p>
 
               <div className="mt-6 space-y-6">
