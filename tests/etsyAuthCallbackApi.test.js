@@ -16,6 +16,16 @@ import {
   clearEtsyConnections,
   getEtsyConnectionCount,
 } from "../src/integrations/etsy/auth/etsyConnectionStore.js";
+import {
+  ETSY_BROWSER_SESSION_COOKIE,
+  hashEtsyBrowserSession,
+} from "../src/integrations/etsy/auth/etsyBrowserSession.js";
+
+const browserToken = "A".repeat(43);
+const ownerSessionHash = hashEtsyBrowserSession(browserToken);
+const browserHeaders = {
+  Cookie: `${ETSY_BROWSER_SESSION_COOKIE}=${browserToken}`,
+};
 
 let server;
 let baseUrl;
@@ -89,7 +99,7 @@ test("Etsy callback rejects a request with missing state", async () => {
   assert.equal(getEtsyConnectionCount(), 0);
 });
 
-test("Etsy callback rejects an invalid OAuth state before token exchange", async () => {
+test("Etsy callback requires the browser session before token exchange", async () => {
   let exchangeCalled = false;
 
   async function fakeExchange() {
@@ -106,11 +116,11 @@ test("Etsy callback rejects an invalid OAuth state before token exchange", async
     `${baseUrl}/api/etsy/auth/callback?state=unknown_state&code=test_code`,
   );
 
-  assert.equal(response.status, 400);
+  assert.equal(response.status, 401);
 
   const data = await response.json();
 
-  assert.equal(data.error, "INVALID_OR_EXPIRED_ETSY_OAUTH_STATE");
+  assert.equal(data.error, "ETSY_BROWSER_SESSION_REQUIRED");
 
   assert.equal(exchangeCalled, false);
 
@@ -153,6 +163,7 @@ test("successful Etsy callback creates a connection without exposing tokens", as
   const now = Date.now();
 
   createEtsyAuthSession({
+    ownerSessionHash,
     state: "valid_callback_state",
     codeVerifier: "stored_callback_verifier",
     redirectUri: "https://example.com/api/etsy/auth/callback",
@@ -184,6 +195,7 @@ test("successful Etsy callback creates a connection without exposing tokens", as
 
   const response = await fetch(
     `${baseUrl}/api/etsy/auth/callback?state=valid_callback_state&code=test_authorization_code`,
+    { headers: browserHeaders },
   );
 
   assert.equal(response.status, 200);
@@ -194,7 +206,7 @@ test("successful Etsy callback creates a connection without exposing tokens", as
 
   assert.equal(data.connection.etsyUserId, "12345678");
 
-  assert.equal(typeof data.connection.connectionId, "string");
+  assert.equal("connectionId" in data.connection, false);
 
   assert.equal("accessToken" in data.connection, false);
 
@@ -218,6 +230,7 @@ test("successful Etsy callback consumes the OAuth state", async () => {
   const now = Date.now();
 
   createEtsyAuthSession({
+    ownerSessionHash,
     state: "single_use_callback_state",
     codeVerifier: "single_use_callback_verifier",
     redirectUri: "https://example.com/api/etsy/auth/callback",
@@ -245,12 +258,14 @@ test("successful Etsy callback consumes the OAuth state", async () => {
 
   const firstResponse = await fetch(
     `${baseUrl}/api/etsy/auth/callback?state=single_use_callback_state&code=first_code`,
+    { headers: browserHeaders },
   );
 
   assert.equal(firstResponse.status, 200);
 
   const secondResponse = await fetch(
     `${baseUrl}/api/etsy/auth/callback?state=single_use_callback_state&code=second_code`,
+    { headers: browserHeaders },
   );
 
   assert.equal(secondResponse.status, 400);
@@ -258,4 +273,49 @@ test("successful Etsy callback consumes the OAuth state", async () => {
   const secondData = await secondResponse.json();
 
   assert.equal(secondData.error, "INVALID_OR_EXPIRED_ETSY_OAUTH_STATE");
+});
+
+test("callback rejects another browser without consuming the rightful OAuth state", async () => {
+  const state = "browser_bound_state";
+  createEtsyAuthSession({
+    ownerSessionHash,
+    state,
+    codeVerifier: "browser_bound_verifier",
+    redirectUri: "https://example.com/callback",
+    scopes: ["shops_r"],
+  });
+  let exchanges = 0;
+  await startTestServer({
+    exchangeAuthorizationCode: async () => {
+      exchanges += 1;
+      return {
+        accessToken: "12345678.access",
+        refreshToken: "12345678.refresh",
+        tokenType: "Bearer",
+        expiresInSeconds: 3600,
+        scopes: ["shops_r"],
+      };
+    },
+  });
+  const wrongResponse = await fetch(
+    `${baseUrl}/api/etsy/auth/callback?state=${state}&code=code`,
+    {
+      headers: {
+        Cookie: `${ETSY_BROWSER_SESSION_COOKIE}=${"B".repeat(43)}`,
+      },
+    },
+  );
+  assert.equal(wrongResponse.status, 401);
+  assert.equal(
+    (await wrongResponse.json()).error,
+    "ETSY_OAUTH_BROWSER_SESSION_MISMATCH",
+  );
+  assert.equal(exchanges, 0);
+
+  const rightfulResponse = await fetch(
+    `${baseUrl}/api/etsy/auth/callback?state=${state}&code=code`,
+    { headers: browserHeaders },
+  );
+  assert.equal(rightfulResponse.status, 200);
+  assert.equal(exchanges, 1);
 });

@@ -2,30 +2,52 @@ import express from "express";
 
 import getEtsyAuthenticatedUser from "../integrations/etsy/getEtsyAuthenticatedUser.js";
 import getEtsyUser from "../integrations/etsy/getEtsyUser.js";
-import { getEtsyConnection } from "../integrations/etsy/auth/etsyConnectionStore.js";
+import { getEtsyConnectionByOwnerSessionHash } from "../integrations/etsy/auth/etsyConnectionStore.js";
+import { readEtsyBrowserSession } from "../integrations/etsy/auth/etsyBrowserSession.js";
 
 export function createEtsyReadRouter({
   getAuthenticatedUser = getEtsyAuthenticatedUser,
   getUser = getEtsyUser,
-  getConnection = getEtsyConnection,
+  getConnectionByOwnerSessionHash = getEtsyConnectionByOwnerSessionHash,
 } = {}) {
   const router = express.Router();
+
+  async function requireOwnedConnection(req) {
+    const browserSession = readEtsyBrowserSession(req);
+    if (!browserSession) throw new Error("ETSY_BROWSER_SESSION_REQUIRED");
+    const connection = await getConnectionByOwnerSessionHash(
+      browserSession.ownerSessionHash,
+    );
+    if (!connection) throw new Error("ETSY_CONNECTION_NOT_FOUND");
+    return connection;
+  }
+
+  function handleOwnershipError(error, res) {
+    if (error.message === "ETSY_BROWSER_SESSION_REQUIRED") {
+      res.status(401).json({
+        error: error.message,
+        message: "Start or reconnect Etsy from this browser.",
+      });
+      return true;
+    }
+    if (error.message === "ETSY_CONNECTION_NOT_FOUND") {
+      res.status(404).json({
+        error: error.message,
+        message: "No Etsy connection belongs to this browser session.",
+      });
+      return true;
+    }
+    return false;
+  }
 
   // *Read the authenticated Etsy user*
 
   router.get("/me", async (req, res) => {
     try {
-      const { connectionId } = req.query;
-
-      if (typeof connectionId !== "string" || !connectionId.trim()) {
-        return res.status(400).json({
-          error: "ETSY_CONNECTION_ID_REQUIRED",
-          message: "An Etsy connection ID is required.",
-        });
-      }
+      const connection = await requireOwnedConnection(req);
 
       const user = await getAuthenticatedUser({
-        connectionId: connectionId.trim(),
+        connectionId: connection.connectionId,
 
         clientId: process.env.ETSY_CLIENT_ID,
 
@@ -39,12 +61,7 @@ export function createEtsyReadRouter({
         user,
       });
     } catch (error) {
-      if (error.message === "ETSY_CONNECTION_NOT_FOUND") {
-        return res.status(404).json({
-          error: error.message,
-          message: "The Etsy connection was not found.",
-        });
-      }
+      if (handleOwnershipError(error, res)) return;
 
       if (error.message === "ETSY_REAUTHORIZATION_REQUIRED") {
         return res.status(401).json({
@@ -102,23 +119,7 @@ export function createEtsyReadRouter({
 
   router.get("/user", async (req, res) => {
     try {
-      const { connectionId } = req.query;
-
-      if (typeof connectionId !== "string" || !connectionId.trim()) {
-        return res.status(400).json({
-          error: "ETSY_CONNECTION_ID_REQUIRED",
-          message: "An Etsy connection ID is required.",
-        });
-      }
-
-      const connection = await getConnection(connectionId.trim());
-
-      if (!connection) {
-        return res.status(404).json({
-          error: "ETSY_CONNECTION_NOT_FOUND",
-          message: "The Etsy connection was not found.",
-        });
-      }
+      const connection = await requireOwnedConnection(req);
 
       const user = await getUser({
         connectionId: connection.connectionId,
@@ -137,6 +138,7 @@ export function createEtsyReadRouter({
         user,
       });
     } catch (error) {
+      if (handleOwnershipError(error, res)) return;
       if (error.message === "ETSY_REAUTHORIZATION_REQUIRED") {
         return res.status(401).json({
           error: error.message,

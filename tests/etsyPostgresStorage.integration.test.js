@@ -38,11 +38,16 @@ test("real Postgres: ciphertext, process restart, cross-client lock and rollback
     const repositoryB = createPostgresEtsyConnectionRepository({ pool: poolB, cipher });
     setEtsyConnectionRepository(repositoryA);
     const connection = await createEtsyConnection({
+      ownerSessionHash: "cd".repeat(32),
       tokenResult: {
         accessToken: "12345678.integration_access", refreshToken: "integration_refresh",
         tokenType: "Bearer", scopes: ["shops_r"], expiresInSeconds: 1,
       }, now: 1000,
     });
+    assert.equal(
+      (await repositoryA.getByOwnerSessionHash("cd".repeat(32))).connectionId,
+      connection.connectionId,
+    );
     const { rows } = await poolA.query("SELECT payload FROM etsy_connections");
     assert.equal(rows[0].payload.includes(connection.accessToken), false);
     assert.equal(rows[0].payload.includes(connection.refreshToken), false);

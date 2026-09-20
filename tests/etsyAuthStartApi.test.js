@@ -105,6 +105,12 @@ test("Etsy auth start returns a PKCE authorization URL", async () => {
 
   assert.equal(response.status, 200);
 
+  const sessionCookie = response.headers.get("set-cookie");
+  assert.match(sessionCookie, /^lighthouse_etsy_session=[A-Za-z0-9_-]{43};/);
+  assert.match(sessionCookie, /HttpOnly/);
+  assert.match(sessionCookie, /SameSite=Lax/);
+  assert.match(sessionCookie, /Path=\/api\/etsy/);
+
   const data = await response.json();
 
   assert.equal(data.expiresInSeconds, 600);
@@ -131,7 +137,7 @@ test("Etsy auth start returns a PKCE authorization URL", async () => {
 
   assert.equal(
     authorizationUrl.searchParams.get("scope"),
-    "shops_r listings_r transactions_r email_r",
+    "shops_r listings_r transactions_r",
   );
 
   assert.equal(

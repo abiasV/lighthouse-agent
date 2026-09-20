@@ -15,6 +15,7 @@ export default async function completeEtsyAuthorization({
   state,
   code,
   clientId,
+  ownerSessionHash,
   now = Date.now(),
   exchangeAuthorizationCode = exchangeEtsyAuthorizationCode,
 }) {
@@ -26,7 +27,9 @@ export default async function completeEtsyAuthorization({
     throw new Error("ETSY_AUTHORIZATION_CODE_REQUIRED");
   }
 
-  const authSession = consumeEtsyAuthSession(state.trim(), now);
+  const authSession = consumeEtsyAuthSession(state.trim(), now, {
+    ownerSessionHash,
+  });
 
   if (!authSession) {
     throw new Error("INVALID_OR_EXPIRED_ETSY_OAUTH_STATE");
@@ -45,10 +48,12 @@ export default async function completeEtsyAuthorization({
 
   const connection = await createEtsyConnection({
     tokenResult,
+    ownerSessionHash,
     now,
   });
 
   return {
+    connectionId: connection.connectionId,
     connection: buildPublicEtsyConnection(connection),
   };
 }

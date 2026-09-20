@@ -15,6 +15,8 @@ import {
   getEtsyConnectionCount,
 } from "../src/integrations/etsy/auth/etsyConnectionStore.js";
 
+const ownerSessionHash = "ab".repeat(32);
+
 afterEach(() => {
   clearEtsyAuthSessions();
   clearEtsyConnections();
@@ -24,6 +26,7 @@ test("completes Etsy authorization using the stored PKCE session", async () => {
   const now = 1_000_000;
 
   createEtsyAuthSession({
+    ownerSessionHash,
     state: "valid_state",
     codeVerifier: "stored_verifier",
     redirectUri: "https://example.com/api/etsy/auth/callback",
@@ -53,6 +56,7 @@ test("completes Etsy authorization using the stored PKCE session", async () => {
     state: "valid_state",
     code: "authorization_code",
     clientId: "test_client",
+    ownerSessionHash,
     now: now + 1000,
     exchangeAuthorizationCode: fakeExchange,
   });
@@ -72,7 +76,7 @@ test("completes Etsy authorization using the stored PKCE session", async () => {
 
   assert.equal(getEtsyConnectionCount(), 1);
 
-  const storedConnection = await getEtsyConnection(result.connection.connectionId);
+  const storedConnection = await getEtsyConnection(result.connectionId);
 
   assert.equal(storedConnection.accessToken, "12345678.fake_access_token");
 
@@ -114,6 +118,7 @@ test("OAuth state cannot be reused after completion", async () => {
   const now = 2_000_000;
 
   createEtsyAuthSession({
+    ownerSessionHash,
     state: "single_use_state",
     codeVerifier: "stored_verifier",
     redirectUri: "https://example.com/callback",
@@ -139,6 +144,7 @@ test("OAuth state cannot be reused after completion", async () => {
     state: "single_use_state",
     code: "first_code",
     clientId: "test_client",
+    ownerSessionHash,
     now: now + 1,
     exchangeAuthorizationCode: fakeExchange,
   });
@@ -149,6 +155,7 @@ test("OAuth state cannot be reused after completion", async () => {
         state: "single_use_state",
         code: "second_code",
         clientId: "test_client",
+        ownerSessionHash,
         now: now + 2,
         exchangeAuthorizationCode: fakeExchange,
       }),
@@ -162,6 +169,7 @@ test("does not create a connection when required scopes are missing", async () =
   const now = 3_000_000;
 
   createEtsyAuthSession({
+    ownerSessionHash,
     state: "missing_scope_state",
     codeVerifier: "stored_verifier",
     redirectUri: "https://example.com/callback",
@@ -189,6 +197,7 @@ test("does not create a connection when required scopes are missing", async () =
         state: "missing_scope_state",
         code: "authorization_code",
         clientId: "test_client",
+        ownerSessionHash,
         now: now + 1,
         exchangeAuthorizationCode: fakeExchange,
       }),

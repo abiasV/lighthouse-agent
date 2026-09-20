@@ -15,6 +15,7 @@ export function createEtsyAuthSession({
   codeVerifier,
   redirectUri,
   scopes,
+  ownerSessionHash = null,
   now = Date.now(),
 }) {
   removeExpiredEtsyAuthSessions(now);
@@ -24,6 +25,7 @@ export function createEtsyAuthSession({
     codeVerifier,
     redirectUri,
     scopes: [...scopes],
+    ownerSessionHash,
     createdAt: now,
     expiresAt: now + ETSY_AUTH_SESSION_TTL_MS,
   };
@@ -33,13 +35,24 @@ export function createEtsyAuthSession({
   return session;
 }
 
-export function consumeEtsyAuthSession(state, now = Date.now()) {
+export function consumeEtsyAuthSession(
+  state,
+  now = Date.now(),
+  { ownerSessionHash } = {},
+) {
   removeExpiredEtsyAuthSessions(now);
 
   const session = etsyAuthSessions.get(state);
 
   if (!session) {
     return null;
+  }
+
+  if (
+    session.ownerSessionHash &&
+    session.ownerSessionHash !== ownerSessionHash
+  ) {
+    throw new Error("ETSY_OAUTH_BROWSER_SESSION_MISMATCH");
   }
 
   etsyAuthSessions.delete(state);

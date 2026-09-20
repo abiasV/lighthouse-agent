@@ -7,7 +7,7 @@ import {
 
 export const ETSY_AUTHORIZATION_URL = "https://www.etsy.com/oauth/connect";
 
-export const ETSY_OAUTH_SCOPES = ["shops_r", "listings_r", "transactions_r", "email_r"];
+export const ETSY_OAUTH_SCOPES = ["shops_r", "listings_r", "transactions_r"];
 
 function generateBase64UrlRandomValue(byteLength = 32) {
   return randomBytes(byteLength).toString("base64url");
@@ -20,6 +20,7 @@ function createCodeChallenge(codeVerifier) {
 export default function buildEtsyAuthorizationRequest({
   clientId,
   redirectUri,
+  ownerSessionHash,
   now = Date.now(),
 }) {
   if (typeof clientId !== "string" || !clientId.trim()) {
@@ -28,6 +29,13 @@ export default function buildEtsyAuthorizationRequest({
 
   if (typeof redirectUri !== "string" || !redirectUri.trim()) {
     throw new Error("ETSY_REDIRECT_URI_REQUIRED");
+  }
+
+  if (
+    typeof ownerSessionHash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(ownerSessionHash)
+  ) {
+    throw new Error("ETSY_OWNER_SESSION_INVALID");
   }
 
   const state = generateBase64UrlRandomValue();
@@ -41,6 +49,7 @@ export default function buildEtsyAuthorizationRequest({
     codeVerifier,
     redirectUri: redirectUri.trim(),
     scopes: ETSY_OAUTH_SCOPES,
+    ownerSessionHash,
     now,
   });
 

@@ -21,17 +21,31 @@ function extractEtsyUserId(accessToken) {
   return userId;
 }
 
-export async function createEtsyConnection({ tokenResult, now = Date.now() }) {
-  const connectionId = randomUUID();
-
+export async function createEtsyConnection({
+  tokenResult,
+  ownerSessionHash,
+  now = Date.now(),
+}) {
   const etsyUserId = extractEtsyUserId(tokenResult.accessToken);
 
   if (!etsyUserId) {
     throw new Error("INVALID_ETSY_ACCESS_TOKEN");
   }
 
+  if (
+    typeof ownerSessionHash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(ownerSessionHash)
+  ) {
+    throw new Error("ETSY_OWNER_SESSION_INVALID");
+  }
+
+  const existingConnection =
+    await repository.getByOwnerSessionHash(ownerSessionHash);
+  const connectionId = existingConnection?.connectionId ?? randomUUID();
+
   const connection = {
     connectionId,
+    ownerSessionHash,
     etsyUserId,
 
     accessToken: tokenResult.accessToken,
@@ -47,13 +61,24 @@ export async function createEtsyConnection({ tokenResult, now = Date.now() }) {
     accessTokenExpiresAt: now + tokenResult.expiresInSeconds * 1000,
   };
 
-  await repository.insert(connection);
+  if (existingConnection) {
+    await repository.save(connection);
+  } else {
+    await repository.insert(connection);
+  }
 
   return connection;
 }
 
 export async function getEtsyConnection(connectionId) {
   return repository.get(connectionId);
+}
+
+export async function getEtsyConnectionByOwnerSessionHash(ownerSessionHash) {
+  if (typeof ownerSessionHash !== "string" || !/^[a-f0-9]{64}$/.test(ownerSessionHash)) {
+    return null;
+  }
+  return repository.getByOwnerSessionHash(ownerSessionHash);
 }
 
 function buildUpdatedConnection(existingConnection, tokenResult, now) {
@@ -112,8 +137,6 @@ export function clearEtsyConnections() {
 
 export function buildPublicEtsyConnection(connection) {
   return {
-    connectionId: connection.connectionId,
-
     etsyUserId: connection.etsyUserId,
 
     scopes: [...connection.scopes],

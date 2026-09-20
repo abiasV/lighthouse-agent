@@ -11,10 +11,19 @@ export function createPostgresEtsyConnectionRepository({ pool, cipher }) {
         );
         return rows.length ? cipher.decrypt(id, rows[0].payload) : null;
       },
+      async getByOwnerSessionHash(ownerSessionHash) {
+        const { rows } = await query(client,
+          "SELECT connection_id, payload FROM etsy_connections WHERE owner_session_hash = $1",
+          [ownerSessionHash],
+        );
+        return rows.length
+          ? cipher.decrypt(rows[0].connection_id, rows[0].payload)
+          : null;
+      },
       async insert(connection) {
         await query(client,
-          "INSERT INTO etsy_connections (connection_id, payload) VALUES ($1, $2)",
-          [connection.connectionId, cipher.encrypt(connection)],
+          "INSERT INTO etsy_connections (connection_id, owner_session_hash, payload) VALUES ($1, $2, $3)",
+          [connection.connectionId, connection.ownerSessionHash, cipher.encrypt(connection)],
         );
       },
       async save(connection) {

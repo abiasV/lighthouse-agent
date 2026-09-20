@@ -11,6 +11,11 @@ import getValidEtsyAccessToken from "../src/integrations/etsy/auth/getValidEtsyA
 import {
   buildEtsyDatabaseConfig, configureEtsyConnectionStorage, requireEtsyConnectionStorage,
 } from "../src/integrations/etsy/auth/configureEtsyConnectionStorage.js";
+import {
+  createEtsyBrowserSession,
+  hashEtsyBrowserSession,
+  serializeEtsyBrowserSessionCookie,
+} from "../src/integrations/etsy/auth/etsyBrowserSession.js";
 
 const key = "ab".repeat(32); // Test-only key.
 const cipher = createEtsyTokenCipher(key);
@@ -19,6 +24,37 @@ const tokens = {
   tokenType: "Bearer", scopes: ["shops_r"], expiresInSeconds: 1,
 };
 afterEach(() => setEtsyConnectionRepository(createMemoryEtsyConnectionRepository()));
+
+test("browser session uses a high-entropy HttpOnly cookie and stores only its hash", () => {
+  const session = createEtsyBrowserSession();
+  assert.match(session.token, /^[A-Za-z0-9_-]{43}$/);
+  assert.equal(session.ownerSessionHash, hashEtsyBrowserSession(session.token));
+  assert.match(session.ownerSessionHash, /^[a-f0-9]{64}$/);
+  const cookie = serializeEtsyBrowserSessionCookie(session.token);
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /Secure/);
+  assert.match(cookie, /SameSite=Lax/);
+  assert.equal(cookie.includes(session.ownerSessionHash), false);
+});
+
+test("connection creation requires a valid owner and reconnects the same browser", async () => {
+  await assert.rejects(
+    createEtsyConnection({ tokenResult: tokens }),
+    /ETSY_OWNER_SESSION_INVALID/,
+  );
+  const ownerSessionHash = "ef".repeat(32);
+  const first = await createEtsyConnection({ tokenResult: tokens, ownerSessionHash });
+  const second = await createEtsyConnection({
+    tokenResult: {
+      ...tokens,
+      accessToken: "12345678.reconnected",
+      refreshToken: "reconnected_refresh",
+    },
+    ownerSessionHash,
+  });
+  assert.equal(second.connectionId, first.connectionId);
+  assert.equal((await getEtsyConnection(first.connectionId)).accessToken, "12345678.reconnected");
+});
 
 test("AES-GCM encrypts the complete record with fresh IVs and round-trips", () => {
   const record = { connectionId: "connection-1", ...tokens };
@@ -46,7 +82,9 @@ test("cipher rejects bad keys, tampering, wrong keys and cross-connection swaps"
 });
 
 test("simultaneous expiry refreshes call Etsy once and keep the rotated token", async () => {
-  const connection = await createEtsyConnection({ tokenResult: tokens, now: 1000 });
+  const connection = await createEtsyConnection({
+    tokenResult: tokens, ownerSessionHash: "cd".repeat(32), now: 1000,
+  });
   let calls = 0;
   const results = await Promise.all(Array.from({ length: 8 }, () => getValidEtsyAccessToken({
     connectionId: connection.connectionId, clientId: "client", now: 3000,
@@ -62,7 +100,10 @@ test("simultaneous expiry refreshes call Etsy once and keep the rotated token", 
 });
 
 test("parallel 401 retries reuse the token already rotated by another request", async () => {
-  const connection = await createEtsyConnection({ tokenResult: { ...tokens, expiresInSeconds: 3600 } });
+  const connection = await createEtsyConnection({
+    tokenResult: { ...tokens, expiresInSeconds: 3600 },
+    ownerSessionHash: "cd".repeat(32),
+  });
   let calls = 0;
   await Promise.all(Array.from({ length: 5 }, () => getValidEtsyAccessToken({
     connectionId: connection.connectionId, clientId: "client",
@@ -78,7 +119,9 @@ test("parallel 401 retries reuse the token already rotated by another request", 
 test("failed persistent write is not reported as a successful refresh", async () => {
   const memory = createMemoryEtsyConnectionRepository();
   setEtsyConnectionRepository(memory);
-  const connection = await createEtsyConnection({ tokenResult: tokens, now: 1000 });
+  const connection = await createEtsyConnection({
+    tokenResult: tokens, ownerSessionHash: "cd".repeat(32), now: 1000,
+  });
   const repository = { ...memory, save: async () => { throw new Error("ETSY_CONNECTION_STORAGE_UNAVAILABLE"); } };
   repository.withLock = (_id, callback) => callback(repository);
   setEtsyConnectionRepository(repository);
@@ -119,13 +162,13 @@ test("invalid encryption config fails before connecting; DB errors never fall ba
   assert.equal(closed, true);
 });
 
-test("production storage can be ready while legacy public Etsy routes stay disabled", async () => {
+test("production storage enables browser-owned Etsy routes after initialization", async () => {
   const storage = await configureEtsyConnectionStorage({
     env: { ETSY_CONNECTION_STORAGE: "postgres", ETSY_DATABASE_URL: "postgres://db.example/test", ETSY_TOKEN_ENCRYPTION_KEY: key, NODE_ENV: "production" },
     createPool: () => ({ on() {}, query: async () => ({ rows: [] }), end: async () => {} }),
   });
   assert.equal(storage.ready, true);
-  assert.equal(storage.enabled, false);
+  assert.equal(storage.enabled, true);
 });
 
 test("disabled Etsy routes return no-store 503 without blocking manual routes", async () => {

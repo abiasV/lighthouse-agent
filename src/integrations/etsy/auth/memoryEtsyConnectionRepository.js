@@ -3,6 +3,12 @@ export function createMemoryEtsyConnectionRepository() {
   const locks = new Map();
   const repository = {
     async get(id) { return structuredClone(connections.get(id) ?? null); },
+    async getByOwnerSessionHash(ownerSessionHash) {
+      const connection = [...connections.values()].find(
+        item => item.ownerSessionHash === ownerSessionHash,
+      );
+      return structuredClone(connection ?? null);
+    },
     async insert(connection) {
       connections.set(connection.connectionId, structuredClone(connection));
     },

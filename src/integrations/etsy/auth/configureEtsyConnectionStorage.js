@@ -64,10 +64,7 @@ export async function configureEtsyConnectionStorage({
     );
     if (rows.length) cipher.decrypt(rows[0].connection_id, rows[0].payload);
     setEtsyConnectionRepository(createPostgresEtsyConnectionRepository({ pool, cipher }));
-    // Durable credentials need owner-bound user sessions before public use.
-    // Do not expose the legacy connectionId-only routes in production.
-    const hosted = env.NODE_ENV === "production" || Boolean(env.RENDER);
-    return { enabled: !hosted, ready: true, mode, close: () => pool.end() };
+    return { enabled: true, ready: true, mode, close: () => pool.end() };
   } catch {
     await pool.end();
     throw new Error("ETSY_STORAGE_INITIALIZATION_FAILED");

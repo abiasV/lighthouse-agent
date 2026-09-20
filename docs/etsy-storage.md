@@ -6,14 +6,18 @@
   reads and writes, refresh locking across server instances, verified database TLS,
   and safe handling of missing or invalid configuration.
 - Not activated: no hosted database or production encryption key has been created.
-- Next: bind connections to authenticated Lighthouse users and browser-bound OAuth
-  sessions, then wire the real Etsy import into the existing planner.
-- Production/Render deliberately blocks the legacy connectionId-only Etsy routes,
-  even when storage is ready. Manual and sample workflows remain available.
+- Browser ownership is implemented with a random HttpOnly cookie. OAuth state is
+  bound to that browser, connection IDs are not exposed, and read routes resolve
+  only the connection owned by the cookie.
+- This is guest-session ownership for the MVP: clearing browser cookies or moving
+  to another browser requires reconnecting Etsy. Account-based ownership can replace
+  the cookie hash later without changing the encrypted token storage.
+- Next: configure a hosted database, then wire the real Etsy import into the planner.
 - OAuth state/PKCE sessions are still in memory. An authorization attempt interrupted
   by a restart must be restarted. Established connections use PostgreSQL when configured.
-- Tests cover encryption, tamper rejection, concurrency, rollback behavior, and fail-closed
-  configuration. The optional real-Postgres integration test requires a local test database.
+- Tests cover browser ownership, encryption, tamper rejection, concurrency, rollback
+  behavior, and fail-closed configuration. The optional real-Postgres integration
+  test requires a local test database.
 
 ## Database preparation
 
@@ -61,6 +65,10 @@ loopback development with ETSY_DATABASE_SSL=disable, never production/Render.
 
 Local OAuth tests may explicitly use ETSY_CONNECTION_STORAGE=memory. This mode is
 rejected on production/Render. With no storage mode set, real Etsy routes return 503.
+
+The OAuth callback must use the same public site origin that started authorization
+so the browser sends its HttpOnly cookie. In production, point Etsy at the Netlify
+`/api/etsy/auth/callback` URL that proxies to the backend, rather than the Render URL.
 
 ## Verification
 

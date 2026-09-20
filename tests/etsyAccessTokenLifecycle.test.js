@@ -18,6 +18,7 @@ afterEach(() => {
 
 function createTestConnection({ now, expiresInSeconds = 3600 }) {
   return createEtsyConnection({
+    ownerSessionHash: "ab".repeat(32),
     tokenResult: {
       accessToken: "12345678.old_access",
 

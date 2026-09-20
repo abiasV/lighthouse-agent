@@ -5,6 +5,11 @@ import buildEtsyAuthorizationRequest from "../integrations/etsy/auth/buildEtsyAu
 import completeEtsyAuthorization from "../integrations/etsy/auth/completeEtsyAuthorization.js";
 
 import { discardEtsyAuthSession } from "../integrations/etsy/auth/etsyAuthSessionStore.js";
+import {
+  createEtsyBrowserSession,
+  readEtsyBrowserSession,
+  serializeEtsyBrowserSessionCookie,
+} from "../integrations/etsy/auth/etsyBrowserSession.js";
 
 export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
   const router = express.Router();
@@ -17,11 +22,24 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
 
       const redirectUri = process.env.ETSY_REDIRECT_URI;
 
+      let browserSession = readEtsyBrowserSession(req);
+      if (!browserSession) {
+        browserSession = createEtsyBrowserSession();
+        res.set(
+          "Set-Cookie",
+          serializeEtsyBrowserSessionCookie(browserSession.token, {
+            secure: process.env.NODE_ENV === "production" || Boolean(process.env.RENDER),
+          }),
+        );
+      }
+
       const result = buildEtsyAuthorizationRequest({
         clientId,
         redirectUri,
+        ownerSessionHash: browserSession.ownerSessionHash,
       });
 
+      res.set("Cache-Control", "no-store");
       return res.json({
         authorizationUrl: result.authorizationUrl,
         expiresInSeconds: result.expiresInSeconds,
@@ -73,13 +91,29 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
         });
       }
 
+      const browserSession = readEtsyBrowserSession(req);
+      if (
+        typeof state === "string" &&
+        state.trim() &&
+        typeof code === "string" &&
+        code.trim() &&
+        !browserSession
+      ) {
+        return res.status(401).json({
+          error: "ETSY_BROWSER_SESSION_REQUIRED",
+          message: "Return to Lighthouse and start the Etsy connection again.",
+        });
+      }
+
       const result = await completeEtsyAuthorization({
         state,
         code,
         clientId: process.env.ETSY_CLIENT_ID,
+        ownerSessionHash: browserSession?.ownerSessionHash,
         exchangeAuthorizationCode,
       });
 
+      res.set("Cache-Control", "no-store");
       return res.json({
         connected: true,
         connection: result.connection,
@@ -96,10 +130,15 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
 
         ETSY_REQUIRED_SCOPE_NOT_GRANTED:
           "Etsy did not grant all required permissions.",
+
+        ETSY_OAUTH_BROWSER_SESSION_MISMATCH:
+          "This Etsy authorization was started in another browser session.",
       };
 
       if (clientErrors[error.message]) {
-        return res.status(400).json({
+        return res.status(
+          error.message === "ETSY_OAUTH_BROWSER_SESSION_MISMATCH" ? 401 : 400,
+        ).json({
           error: error.message,
           message: clientErrors[error.message],
         });
