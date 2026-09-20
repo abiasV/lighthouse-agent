@@ -72,7 +72,7 @@ test("completes Etsy authorization using the stored PKCE session", async () => {
 
   assert.equal(getEtsyConnectionCount(), 1);
 
-  const storedConnection = getEtsyConnection(result.connection.connectionId);
+  const storedConnection = await getEtsyConnection(result.connection.connectionId);
 
   assert.equal(storedConnection.accessToken, "12345678.fake_access_token");
 

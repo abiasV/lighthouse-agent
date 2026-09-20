@@ -5,6 +5,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
+    "db:migrate:etsy": "node scripts/migrateEtsyStorage.js",
     "test": "node --test",
     "start": "node server.js",
     "test:real:validation": "node scripts/testRealValidation.js",
@@ -17,6 +18,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "openai": "^7.5.0"
+    "openai": "^7.5.0",
+    "pg": "^8.23.0"
   }
 }

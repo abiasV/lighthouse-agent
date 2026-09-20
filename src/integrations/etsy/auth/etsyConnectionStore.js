@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { createMemoryEtsyConnectionRepository } from "./memoryEtsyConnectionRepository.js";
 
-const etsyConnections = new Map();
+let repository = createMemoryEtsyConnectionRepository();
+
+export function setEtsyConnectionRepository(nextRepository) {
+  repository = nextRepository;
+}
 
 function extractEtsyUserId(accessToken) {
   if (typeof accessToken !== "string") {
@@ -16,7 +21,7 @@ function extractEtsyUserId(accessToken) {
   return userId;
 }
 
-export function createEtsyConnection({ tokenResult, now = Date.now() }) {
+export async function createEtsyConnection({ tokenResult, now = Date.now() }) {
   const connectionId = randomUUID();
 
   const etsyUserId = extractEtsyUserId(tokenResult.accessToken);
@@ -42,21 +47,16 @@ export function createEtsyConnection({ tokenResult, now = Date.now() }) {
     accessTokenExpiresAt: now + tokenResult.expiresInSeconds * 1000,
   };
 
-  etsyConnections.set(connectionId, connection);
+  await repository.insert(connection);
 
   return connection;
 }
 
-export function getEtsyConnection(connectionId) {
-  return etsyConnections.get(connectionId) ?? null;
+export async function getEtsyConnection(connectionId) {
+  return repository.get(connectionId);
 }
 
-export function updateEtsyConnectionTokens({
-  connectionId,
-  tokenResult,
-  now = Date.now(),
-}) {
-  const existingConnection = getEtsyConnection(connectionId);
+function buildUpdatedConnection(existingConnection, tokenResult, now) {
 
   if (!existingConnection) {
     throw new Error("ETSY_CONNECTION_NOT_FOUND");
@@ -97,17 +97,17 @@ export function updateEtsyConnectionTokens({
     accessTokenExpiresAt: now + tokenResult.expiresInSeconds * 1000,
   };
 
-  etsyConnections.set(connectionId, updatedConnection);
-
   return updatedConnection;
 }
 
 export function getEtsyConnectionCount() {
-  return etsyConnections.size;
+  if (!repository.count) throw new Error("ETSY_MEMORY_STORE_ONLY");
+  return repository.count();
 }
 
 export function clearEtsyConnections() {
-  etsyConnections.clear();
+  if (!repository.clear) throw new Error("ETSY_MEMORY_STORE_ONLY");
+  repository.clear();
 }
 
 export function buildPublicEtsyConnection(connection) {
@@ -120,4 +120,23 @@ export function buildPublicEtsyConnection(connection) {
 
     accessTokenExpiresAt: connection.accessTokenExpiresAt,
   };
+}
+// The lock covers reading, provider refresh, and persisting rotated tokens.
+export async function withEtsyConnectionLock(connectionId, callback) {
+  return repository.withLock(connectionId, async (lockedRepository) => {
+    const connection = await lockedRepository.get(connectionId);
+    if (!connection) throw new Error("ETSY_CONNECTION_NOT_FOUND");
+    return callback({
+      connection,
+      async saveTokens(tokenResult, now) {
+        const updated = buildUpdatedConnection(connection, tokenResult, now);
+        await lockedRepository.save(updated);
+        return updated;
+      },
+    });
+  });
+}
+
+export async function updateEtsyConnectionTokens({ connectionId, tokenResult, now = Date.now() }) {
+  return withEtsyConnectionLock(connectionId, ({ saveTokens }) => saveTokens(tokenResult, now));
 }

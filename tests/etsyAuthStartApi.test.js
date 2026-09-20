@@ -79,6 +79,9 @@ before(async () => {
       ...process.env,
 
       PORT: String(port),
+      NODE_ENV: "test",
+      RENDER: "",
+      ETSY_CONNECTION_STORAGE: "memory",
 
       ETSY_CLIENT_ID: "test_etsy_client",
 

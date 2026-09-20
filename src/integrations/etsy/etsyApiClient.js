@@ -132,6 +132,7 @@ export default async function etsyApiGet({
         connectionId,
         clientId,
         forceRefresh: true,
+        rejectedAccessToken: tokenResult.accessToken,
       });
 
       continue;

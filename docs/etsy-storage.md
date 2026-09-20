@@ -1,0 +1,85 @@
+# Etsy connection storage
+
+## Status
+
+- Implemented: encrypted PostgreSQL connection records, asynchronous OAuth/token
+  reads and writes, refresh locking across server instances, verified database TLS,
+  and safe handling of missing or invalid configuration.
+- Not activated: no hosted database or production encryption key has been created.
+- Next: bind connections to authenticated Lighthouse users and browser-bound OAuth
+  sessions, then wire the real Etsy import into the existing planner.
+- Production/Render deliberately blocks the legacy connectionId-only Etsy routes,
+  even when storage is ready. Manual and sample workflows remain available.
+- OAuth state/PKCE sessions are still in memory. An authorization attempt interrupted
+  by a restart must be restarted. Established connections use PostgreSQL when configured.
+- Tests cover encryption, tamper rejection, concurrency, rollback behavior, and fail-closed
+  configuration. The optional real-Postgres integration test requires a local test database.
+
+## Database preparation
+
+Use a dedicated PostgreSQL database, a restricted application database role, and a
+backup policy. The runtime needs SELECT, INSERT and UPDATE on etsy_connections.
+The migration role additionally needs permission to create the table.
+Do not activate a paid service without the owner's approval.
+
+Backend environment only (Render, never Netlify client/VITE variables):
+
+| Variable | Value |
+| --- | --- |
+| ETSY_CONNECTION_STORAGE | postgres |
+| ETSY_DATABASE_URL | Dedicated PostgreSQL connection URL, with no SSL URL parameters |
+| ETSY_TOKEN_ENCRYPTION_KEY | Stable 64-character hexadecimal key (32 random bytes) |
+| ETSY_DATABASE_SSL | verify (default) |
+| ETSY_DATABASE_CA | Optional trusted CA PEM if the provider requires it |
+
+Generate the key once in a private terminal:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Store it in the backend's secret settings and a password manager. Never commit it,
+paste it into chat, expose it to the frontend, or regenerate it during deployments.
+Losing/changing this key makes existing records unreadable. Planned key rotation
+requires a migration; this first version does not implement automatic rotation.
+
+With the database URL configured in the migration environment:
+
+```bash
+npm ci
+npm run db:migrate:etsy
+```
+
+The migration is additive and safe to rerun. Startup verifies table access and checks
+the encryption key against an existing record, if present. Failed setup disables
+real Etsy routes; it never falls back to memory or plaintext. Database outages during
+requests return errors rather than claiming a successful save.
+
+Use verified TLS. SSL parameters such as sslmode in the URL are rejected because they
+can override pg's TLS configuration. Plaintext connections are permitted only for
+loopback development with ETSY_DATABASE_SSL=disable, never production/Render.
+
+Local OAuth tests may explicitly use ETSY_CONNECTION_STORAGE=memory. This mode is
+rejected on production/Render. With no storage mode set, real Etsy routes return 503.
+
+## Verification
+
+```bash
+node --test tests/etsySecureStorage.test.js tests/etsyAccessTokenLifecycle.test.js tests/etsyOAuthCompletion.test.js tests/etsyAuthStartApi.test.js tests/etsyReadApi.test.js
+```
+
+For the optional integration test, point ETSY_TEST_DATABASE_URL at a **local dedicated
+test database** named lighthouse_test (or lighthouse_test with a suffix), then run:
+
+```bash
+node --test tests/etsyPostgresStorage.integration.test.js
+```
+
+It creates/removes only its own random schema, verifies ciphertext, reads the connection
+from a fresh Node process, and checks cross-client locking, rollback and corruption.
+Without the URL it is explicitly skipped.
+
+Refreshes are serialized per connection in a PostgreSQL transaction. A provider refresh
+and database commit cannot be one atomic operation: if Etsy rotates a token but the
+subsequent commit fails, reauthorization may be required. No shop changes or AI calls
+are made by storage or its tests.

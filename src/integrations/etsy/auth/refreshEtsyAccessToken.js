@@ -20,6 +20,7 @@ export default async function refreshEtsyAccessToken({
   });
 
   const response = await fetchImpl(ETSY_TOKEN_URL, {
+    signal: AbortSignal.timeout(10_000),
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

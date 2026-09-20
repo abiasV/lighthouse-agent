@@ -37,7 +37,7 @@ function createTestConnection({ now, expiresInSeconds = 3600 }) {
 test("returns the existing Etsy access token when it is still safely valid", async () => {
   const now = 1_000_000;
 
-  const connection = createTestConnection({
+  const connection = await createTestConnection({
     now,
     expiresInSeconds: 3600,
   });
@@ -70,7 +70,7 @@ test("returns the existing Etsy access token when it is still safely valid", asy
 test("refreshes an Etsy access token when it is inside the refresh buffer", async () => {
   const now = 2_000_000;
 
-  const connection = createTestConnection({
+  const connection = await createTestConnection({
     now,
     expiresInSeconds: 60,
   });
@@ -111,7 +111,7 @@ test("refreshes an Etsy access token when it is inside the refresh buffer", asyn
 
   assert.equal(result.refreshed, true);
 
-  const storedConnection = getEtsyConnection(connection.connectionId);
+  const storedConnection = await getEtsyConnection(connection.connectionId);
 
   assert.equal(storedConnection.accessToken, "12345678.new_access");
 
@@ -123,7 +123,7 @@ test("refreshes an Etsy access token when it is inside the refresh buffer", asyn
 test("refreshes an already expired Etsy access token", async () => {
   const now = 3_000_000;
 
-  const connection = createTestConnection({
+  const connection = await createTestConnection({
     now,
     expiresInSeconds: 1,
   });
@@ -174,7 +174,7 @@ test("rejects an unknown Etsy connection", async () => {
 test("rejects a refreshed token that belongs to another Etsy user", async () => {
   const now = 4_000_000;
 
-  const connection = createTestConnection({
+  const connection = await createTestConnection({
     now,
     expiresInSeconds: 1,
   });
@@ -209,7 +209,7 @@ test("rejects a refreshed token that belongs to another Etsy user", async () => 
     },
   );
 
-  const storedConnection = getEtsyConnection(connection.connectionId);
+  const storedConnection = await getEtsyConnection(connection.connectionId);
 
   assert.equal(storedConnection.accessToken, "12345678.old_access");
 });
@@ -217,7 +217,7 @@ test("rejects a refreshed token that belongs to another Etsy user", async () => 
 test("rejects a refreshed token that loses a required scope", async () => {
   const now = 5_000_000;
 
-  const connection = createTestConnection({
+  const connection = await createTestConnection({
     now,
     expiresInSeconds: 1,
   });
@@ -260,12 +260,12 @@ test("uses a sixty-second safety buffer before Etsy access token expiry", () => 
 test("failed token refresh leaves the existing Etsy connection unchanged", async () => {
   const now = 6_000_000;
 
-  const connection = createTestConnection({
+  const connection = await createTestConnection({
     now,
     expiresInSeconds: 1,
   });
 
-  const beforeRefresh = getEtsyConnection(connection.connectionId);
+  const beforeRefresh = await getEtsyConnection(connection.connectionId);
 
   async function fakeRefresh() {
     throw new Error("ETSY_TOKEN_REFRESH_FAILED");
@@ -287,7 +287,7 @@ test("failed token refresh leaves the existing Etsy connection unchanged", async
     },
   );
 
-  const afterRefresh = getEtsyConnection(connection.connectionId);
+  const afterRefresh = await getEtsyConnection(connection.connectionId);
 
   assert.deepEqual(afterRefresh, beforeRefresh);
 });
@@ -295,7 +295,7 @@ test("failed token refresh leaves the existing Etsy connection unchanged", async
 test("force refresh bypasses a still-valid Etsy access token", async () => {
   const now = 7_000_000;
 
-  const connection = createTestConnection({
+  const connection = await createTestConnection({
     now,
     expiresInSeconds: 3600,
   });

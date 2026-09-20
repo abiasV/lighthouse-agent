@@ -43,7 +43,7 @@ export default async function completeEtsyAuthorization({
     throw new Error("ETSY_REQUIRED_SCOPE_NOT_GRANTED");
   }
 
-  const connection = createEtsyConnection({
+  const connection = await createEtsyConnection({
     tokenResult,
     now,
   });

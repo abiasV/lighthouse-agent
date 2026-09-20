@@ -111,7 +111,7 @@ export function createEtsyReadRouter({
         });
       }
 
-      const connection = getConnection(connectionId.trim());
+      const connection = await getConnection(connectionId.trim());
 
       if (!connection) {
         return res.status(404).json({
