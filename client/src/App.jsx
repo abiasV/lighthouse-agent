@@ -335,24 +335,6 @@ function App() {
     });
   }
 
-  function scrollToAnalysis() {
-    if (view !== "landing") {
-      setView("landing");
-
-      window.setTimeout(() => {
-        document
-          .getElementById("analysis-form")
-          ?.scrollIntoView({ behavior: "smooth" });
-      }, 0);
-
-      return;
-    }
-
-    document
-      .getElementById("analysis-form")
-      ?.scrollIntoView({ behavior: "smooth" });
-  }
-
   function formatStatus(status) {
     if (!status) {
       return "";
@@ -1296,7 +1278,7 @@ function App() {
                           htmlFor="idea"
                           className="mb-2 block text-sm font-semibold"
                         >
-                          Analyze a new Etsy product opportunity
+                          Evaluate a new Etsy product idea
                         </label>
 
                         <input
@@ -1314,8 +1296,8 @@ function App() {
                           className="mt-3 w-full cursor-pointer rounded-xl border border-indigo-300 bg-indigo-50 px-5 py-3 font-semibold text-indigo-800 shadow-sm transition hover:border-indigo-500 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200 dark:hover:border-indigo-600 dark:hover:bg-indigo-950/80"
                         >
                           {loading
-                            ? "Analyzing..."
-                            : "Analyze a New Opportunity"}
+                            ? "Evaluating..."
+                            : "Evaluate This Product Idea"}
                         </button>
                       </form>
                     </div>
@@ -1785,14 +1767,6 @@ function App() {
                     className="cursor-pointer rounded-xl bg-indigo-500 px-6 py-3.5 font-semibold text-white transition hover:bg-indigo-400"
                   >
                     Build My Weekly Growth Plan
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={scrollToAnalysis}
-                    className="cursor-pointer rounded-xl border border-slate-700 bg-slate-900 px-6 py-3.5 font-semibold text-white transition hover:bg-slate-800"
-                  >
-                    Analyze a New Opportunity
                   </button>
                 </div>
 
