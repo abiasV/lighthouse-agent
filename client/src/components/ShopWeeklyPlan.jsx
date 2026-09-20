@@ -1500,8 +1500,8 @@ function ShopWeeklyPlan({ onBack }) {
                 <fieldset className="mt-6 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
                   <legend className="px-2 font-semibold">Reporting period</legend>
                   <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">
-                    Use the same dates and source-report time zone for views and sales.
-                    This data window is separate from your weekly action plan.
+                    Use the same date range for views and sales. This data window is
+                    separate from your weekly action plan.
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="text-sm font-medium">
@@ -1519,20 +1519,8 @@ function ShopWeeklyPlan({ onBack }) {
                         className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-950" />
                     </label>
                   </div>
-                  <label className="mt-3 block text-sm font-medium">
-                    Source-report time zone
-                    <input required list="reporting-time-zones" value={reportingPeriod.timeZone}
-                      onChange={(event) => updateReportingPeriod("timeZone", event.target.value)}
-                      placeholder="Example: America/Toronto"
-                      className="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-950" />
-                  </label>
-                  <datalist id="reporting-time-zones">
-                    <option value="UTC" /><option value="America/Toronto" />
-                    <option value="America/New_York" /><option value="America/Los_Angeles" />
-                    <option value="Europe/London" />
-                  </datalist>
                   <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                    Match the report you copied; do not assume your browser or home time zone.
+                    Lighthouse uses UTC for these reporting dates.
                   </p>
                   {manualPeriodPreview && (
                     <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
@@ -1682,8 +1670,8 @@ function ShopWeeklyPlan({ onBack }) {
                 <label className="mt-5 flex items-start gap-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
                   <input type="checkbox" checked={periodConfirmed}
                     onChange={(event) => setPeriodConfirmed(event.target.checked)} className="mt-1" />
-                  I confirm all views and sales use the selected dates and time zone,
-                  and any sales trend compares with the previous period shown above.
+                  I confirm all views and sales use the selected date range, and any
+                  sales trend compares with the previous period shown above.
                 </label>
 
                 {error && (
