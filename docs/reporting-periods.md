@@ -2,15 +2,13 @@
 
 The weekly action plan and the observation window are separate. Manual input
 defaults to the last 30 completed UTC calendar days. Sellers can select a
-different completed window and the IANA time zone of their source report.
-Changing the dates or metrics clears the confirmation checkbox.
+different completed date window; Lighthouse keeps the time zone fixed to UTC.
 
 `POST /api/shop/plan` requires `reportingPeriod: { startDate, endDate, timeZone }`
-(inclusive YYYY-MM-DD dates) and `periodConfirmed: true`. All listing views and
-sales belong to this shared declared period. An optional `trendPercent` compares
-sales with the immediately preceding equal-length window; unknown is `null`,
-not zero. Confirmation is a seller declaration, not independent verification
-of the numbers or their source.
+(inclusive YYYY-MM-DD dates). Submitting the manual form associates all listing
+views and sales with this shared period; no separate confirmation checkbox is
+required. An optional `trendPercent` compares sales with the immediately
+preceding equal-length window; unknown is `null`, not zero.
 
 The server validates real calendar dates, ordering, time zone, completed days,
 and numeric metrics. It derives `days`, `previousStartDate`, and `previousEndDate`

@@ -13,6 +13,75 @@ function createEmptyListing() {
   };
 }
 
+function isWholeNonNegativeNumber(value) {
+  const normalizedValue = String(value ?? "").trim();
+
+  if (!normalizedValue) {
+    return false;
+  }
+
+  const numericValue = Number(normalizedValue);
+
+  return Number.isInteger(numericValue) && numericValue >= 0;
+}
+
+function getManualFormErrors({
+  shopName,
+  weeklyAvailableMinutes,
+  listings,
+}) {
+  const errors = [];
+
+  if (!shopName.trim()) {
+    errors.push("Enter your shop name.");
+  }
+
+  if (!isWholeNonNegativeNumber(weeklyAvailableMinutes)) {
+    errors.push("Enter your available minutes as a whole number of 0 or more.");
+  }
+
+  const startedListings = listings
+    .map((listing, index) => ({ listing, index }))
+    .filter(({ listing }) =>
+      [listing.title, listing.views, listing.sales, listing.trendPercent].some(
+        (value) => String(value ?? "").trim(),
+      ),
+    );
+
+  if (startedListings.length === 0) {
+    errors.push("Complete at least one listing with its title, views, and sales.");
+  }
+
+  startedListings.forEach(({ listing, index }) => {
+    const listingLabel = `Listing ${index + 1}`;
+
+    if (!listing.title.trim()) {
+      errors.push(`${listingLabel}: enter the listing title.`);
+    }
+
+    if (!isWholeNonNegativeNumber(listing.views)) {
+      errors.push(`${listingLabel}: enter views as a whole number of 0 or more.`);
+    }
+
+    if (!isWholeNonNegativeNumber(listing.sales)) {
+      errors.push(`${listingLabel}: enter sales as a whole number of 0 or more.`);
+    }
+
+    const trendValue = String(listing.trendPercent ?? "").trim();
+
+    if (
+      trendValue &&
+      (!Number.isFinite(Number(trendValue)) || Number(trendValue) < -100)
+    ) {
+      errors.push(
+        `${listingLabel}: leave sales trend blank or enter a percentage of -100 or more.`,
+      );
+    }
+  });
+
+  return errors;
+}
+
 async function readJsonResponse(response) {
   const responseText = await response.text();
 
@@ -45,7 +114,6 @@ async function readJsonResponse(response) {
 
 function ShopWeeklyPlan({ onBack }) {
   const [reportingPeriod, setReportingPeriod] = useState(() => defaultReportingPeriod());
-  const [periodConfirmed, setPeriodConfirmed] = useState(false);
   const [etsyPeriodConfirmed, setEtsyPeriodConfirmed] = useState(false);
   const [shopName, setShopName] = useState("");
 
@@ -141,7 +209,6 @@ function ShopWeeklyPlan({ onBack }) {
     }
 
     setDataSourceMode(mode);
-    setPeriodConfirmed(false);
     setEtsyPeriodConfirmed(false);
 
     setPlan(null);
@@ -157,7 +224,7 @@ function ShopWeeklyPlan({ onBack }) {
   }
 
   function updateListing(id, field, value) {
-    setPeriodConfirmed(false);
+    setError("");
     setListings((currentListings) =>
       currentListings.map((listing) =>
         listing.id === id
@@ -346,7 +413,18 @@ function ShopWeeklyPlan({ onBack }) {
 
     try {
       normalizeReportingPeriod(reportingPeriod);
-      if (!periodConfirmed) throw new Error("REPORTING_PERIOD_CONFIRMATION_REQUIRED");
+
+      const validationErrors = getManualFormErrors({
+        shopName,
+        weeklyAvailableMinutes,
+        listings,
+      });
+
+      if (validationErrors.length > 0) {
+        setError(validationErrors[0]);
+        return;
+      }
+
       setLoading(true);
       setError("");
 
@@ -360,9 +438,8 @@ function ShopWeeklyPlan({ onBack }) {
         body: JSON.stringify({
           shopName: trimmedShopName,
           reportingPeriod,
-          periodConfirmed,
 
-          weeklyAvailableMinutes: Number(weeklyAvailableMinutes) || null,
+          weeklyAvailableMinutes: Number(weeklyAvailableMinutes),
 
           listings: requestListings,
         }),
@@ -1291,8 +1368,17 @@ function ShopWeeklyPlan({ onBack }) {
 
   function updateReportingPeriod(field, value) {
     setReportingPeriod((current) => ({ ...current, [field]: value }));
-    setPeriodConfirmed(false);
+    setError("");
   }
+
+  const manualFormErrors = getManualFormErrors({
+    shopName,
+    weeklyAvailableMinutes,
+    listings,
+  });
+
+  const manualFormIsValid =
+    manualFormErrors.length === 0 && Boolean(manualPeriodPreview);
 
   return (
     <section className="py-12 text-slate-900 dark:text-slate-100">
@@ -1469,8 +1555,12 @@ function ShopWeeklyPlan({ onBack }) {
 
                     <input
                       id="shopName"
+                      required
                       value={shopName}
-                      onChange={(event) => setShopName(event.target.value)}
+                      onChange={(event) => {
+                        setShopName(event.target.value);
+                        setError("");
+                      }}
                       placeholder="Example: Maya Studio"
                       className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
                     />
@@ -1488,10 +1578,13 @@ function ShopWeeklyPlan({ onBack }) {
                       id="weeklyMinutes"
                       type="number"
                       min="0"
+                      required
+                      step="1"
                       value={weeklyAvailableMinutes}
-                      onChange={(event) =>
-                        setWeeklyAvailableMinutes(event.target.value)
-                      }
+                      onChange={(event) => {
+                        setWeeklyAvailableMinutes(event.target.value);
+                        setError("");
+                      }}
                       className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                     />
                   </div>
@@ -1667,12 +1760,20 @@ function ShopWeeklyPlan({ onBack }) {
                   })}
                 </div>
 
-                <label className="mt-5 flex items-start gap-3 text-sm leading-6 text-slate-700 dark:text-slate-300">
-                  <input type="checkbox" checked={periodConfirmed}
-                    onChange={(event) => setPeriodConfirmed(event.target.checked)} className="mt-1" />
-                  I confirm all views and sales use the selected date range, and any
-                  sales trend compares with the previous period shown above.
-                </label>
+                {manualFormErrors.length > 0 && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300"
+                  >
+                    <p className="font-semibold">Complete these fields to continue:</p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5">
+                      {manualFormErrors.map((formError) => (
+                        <li key={formError}>{formError}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {error && (
                   <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
@@ -1685,7 +1786,7 @@ function ShopWeeklyPlan({ onBack }) {
                   disabled={
                     loading ||
                     executionLoading ||
-                    !periodConfirmed || !manualPeriodPreview ||
+                    !manualFormIsValid ||
                     approvalLoadingTaskId !== null
                   }
                   className="mt-6 w-full cursor-pointer rounded-xl bg-indigo-600 px-5 py-3.5 font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"

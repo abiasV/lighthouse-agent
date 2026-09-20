@@ -96,6 +96,8 @@ router.post("/plan", (req, res) => {
     const message = PERIOD_ERRORS[error.message] ??
       (error.message === "INVALID_MANUAL_LISTING_METRICS"
         ? "Enter whole non-negative views and sales. Leave trend blank if unknown, or enter a percentage of at least -100."
+        : error.message === "INVALID_WEEKLY_AVAILABLE_MINUTES"
+          ? "Weekly available minutes must be a whole number of 0 or more."
         : null);
     if (message) return res.status(400).json({ error: error.message, message });
     console.error(error);

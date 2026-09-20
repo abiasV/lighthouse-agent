@@ -2,7 +2,10 @@ import { normalizeReportingPeriod } from "../../shared/reportingPeriod.js";
 
 export default function normalizeManualShopData(data) {
   const reportingPeriod = normalizeReportingPeriod(data.reportingPeriod);
-  if (data.periodConfirmed !== true) throw new Error("REPORTING_PERIOD_CONFIRMATION_REQUIRED");
+  if (data.weeklyAvailableMinutes != null &&
+      (!Number.isInteger(data.weeklyAvailableMinutes) || data.weeklyAvailableMinutes < 0)) {
+    throw new Error("INVALID_WEEKLY_AVAILABLE_MINUTES");
+  }
   const listings = data.listings.map((listing) => {
     if (!listing || !String(listing.title ?? "").trim() ||
         !Number.isInteger(listing.views) || listing.views < 0 ||

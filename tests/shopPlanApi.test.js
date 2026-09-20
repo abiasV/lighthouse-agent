@@ -104,14 +104,13 @@ after(() => {
   }
 });
 
-test("manual period is required and retained through execution", async () => {
-  const body = { shopName: "Period test", listings: [{ id: "l", title: "Test", views: 200, sales: 5, trendPercent: null }] };
+test("manual period is required and retained without a confirmation checkbox", async () => {
+  const body = { shopName: "Period test", weeklyAvailableMinutes: 180,
+    listings: [{ id: "l", title: "Test", views: 200, sales: 5, trendPercent: null }] };
   const missing = await postJson("/api/shop/plan", body);
   assert.equal(missing.response.status, 400);
   assert.equal(missing.data.error, "REPORTING_PERIOD_REQUIRED");
-  const unconfirmed = await postJson("/api/shop/plan", { ...body, reportingPeriod: sampleManualPeriod });
-  assert.equal(unconfirmed.response.status, 400);
-  const created = await postJson("/api/shop/plan", { ...body, reportingPeriod: sampleManualPeriod, periodConfirmed: true });
+  const created = await postJson("/api/shop/plan", { ...body, reportingPeriod: sampleManualPeriod });
   assert.equal(created.response.status, 200);
   assert.equal(created.data.reportingPeriod.startDate, sampleManualPeriod.startDate);
   const executed = await postJson("/api/shop/execute", { shopPlanId: created.data.shopPlanId });

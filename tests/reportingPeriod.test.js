@@ -81,14 +81,15 @@ test("sales on a period boundary count once, and the incomplete current day is e
   assert.equal(result.listings[0].metrics.previousPeriodSales, 2);
 });
 
-test("manual metrics retain the declared period and keep unknown trend unknown", () => {
+test("manual metrics retain the declared period without separate confirmation", () => {
   const data = { shopName: "Test", reportingPeriod: { startDate: "2024-02-01", endDate: "2024-02-29", timeZone: "America/Toronto" },
-    periodConfirmed: true, listings: [{ id: "l", title: "Test", views: 200, sales: 5, trendPercent: null }] };
+    weeklyAvailableMinutes: 180, listings: [{ id: "l", title: "Test", views: 200, sales: 5, trendPercent: null }] };
   const normalized = normalizeManualShopData(data);
   assert.equal(normalized.reportingPeriod.days, 29);
   assert.equal(normalized.reportingPeriod.timeZone, "America/Toronto");
   assert.equal(normalized.listings[0].trendPercent, null);
-  assert.throws(() => normalizeManualShopData({ ...data, periodConfirmed: false }));
+  assert.equal(normalizeManualShopData({ ...data, periodConfirmed: false }).listings.length, 1);
+  assert.throws(() => normalizeManualShopData({ ...data, weeklyAvailableMinutes: -1 }));
   assert.throws(() => normalizeManualShopData({ ...data, reportingPeriod: undefined }));
   assert.throws(() => normalizeManualShopData({ ...data, listings: [{ ...data.listings[0], views: null }] }));
 });
