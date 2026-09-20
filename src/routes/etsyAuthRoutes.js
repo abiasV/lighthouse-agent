@@ -4,7 +4,7 @@ import buildEtsyAuthorizationRequest from "../integrations/etsy/auth/buildEtsyAu
 
 import completeEtsyAuthorization from "../integrations/etsy/auth/completeEtsyAuthorization.js";
 
-import { discardEtsyAuthSession } from "../integrations/etsy/auth/etsyAuthSessionStore.js";
+import { consumeEtsyAuthSession } from "../integrations/etsy/auth/etsyAuthSessionStore.js";
 import {
   createEtsyBrowserSession,
   readEtsyBrowserSession,
@@ -13,6 +13,11 @@ import {
 
 export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
   const router = express.Router();
+  router.use((_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    res.set("Referrer-Policy", "no-referrer");
+    next();
+  });
 
   // Start an Etsy OAuth authorization request
 
@@ -59,7 +64,7 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
         });
       }
 
-      console.error(error);
+      console.error("ETSY_AUTH_REQUEST_FAILED");
 
       return res.status(500).json({
         error: "ETSY_AUTH_START_FAILED",
@@ -79,8 +84,17 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
         error_description: errorDescription,
       } = req.query;
 
+      const browserSession = readEtsyBrowserSession(req);
       if (error) {
-        discardEtsyAuthSession(state);
+        if (!browserSession) {
+          return res.status(401).json({ error: "ETSY_BROWSER_SESSION_REQUIRED" });
+        }
+        if (typeof state !== "string" || !state.trim()) {
+          throw new Error("ETSY_OAUTH_STATE_REQUIRED");
+        }
+        if (!consumeEtsyAuthSession(state.trim(), Date.now(), {
+          ownerSessionHash: browserSession.ownerSessionHash,
+        })) throw new Error("INVALID_OR_EXPIRED_ETSY_OAUTH_STATE");
 
         return res.status(400).json({
           error: "ETSY_AUTHORIZATION_DENIED",
@@ -91,7 +105,6 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
         });
       }
 
-      const browserSession = readEtsyBrowserSession(req);
       if (
         typeof state === "string" &&
         state.trim() &&
@@ -168,7 +181,7 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
         });
       }
 
-      console.error(error);
+      console.error("ETSY_AUTH_REQUEST_FAILED");
 
       return res.status(500).json({
         error: "ETSY_AUTH_CALLBACK_FAILED",

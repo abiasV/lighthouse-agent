@@ -137,7 +137,7 @@ test("Etsy auth start returns a PKCE authorization URL", async () => {
 
   assert.equal(
     authorizationUrl.searchParams.get("scope"),
-    "shops_r listings_r transactions_r",
+    "shops_r listings_r transactions_r email_r",
   );
 
   assert.equal(

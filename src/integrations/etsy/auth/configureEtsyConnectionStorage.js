@@ -60,7 +60,7 @@ export async function configureEtsyConnectionStorage({
   try {
     // Explicit migration first. Check existing key compatibility before serving.
     const { rows } = await pool.query(
-      "SELECT connection_id, payload FROM etsy_connections LIMIT 1",
+      "SELECT connection_id, owner_session_hash, payload FROM etsy_connections LIMIT 1",
     );
     if (rows.length) cipher.decrypt(rows[0].connection_id, rows[0].payload);
     setEtsyConnectionRepository(createPostgresEtsyConnectionRepository({ pool, cipher }));

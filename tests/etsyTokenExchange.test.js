@@ -43,6 +43,7 @@ test("exchanges Etsy authorization code using the stored PKCE verifier", async (
   assert.equal(capturedUrl, ETSY_TOKEN_URL);
 
   assert.equal(capturedOptions.method, "POST");
+  assert.ok(capturedOptions.signal instanceof AbortSignal);
 
   assert.equal(
     capturedOptions.headers["Content-Type"],

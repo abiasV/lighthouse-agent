@@ -7,7 +7,8 @@ import {
 
 export const ETSY_AUTHORIZATION_URL = "https://www.etsy.com/oauth/connect";
 
-export const ETSY_OAUTH_SCOPES = ["shops_r", "listings_r", "transactions_r"];
+// email_r is required by the existing getUser profile endpoint.
+export const ETSY_OAUTH_SCOPES = ["shops_r", "listings_r", "transactions_r", "email_r"];
 
 function generateBase64UrlRandomValue(byteLength = 32) {
   return randomBytes(byteLength).toString("base64url");

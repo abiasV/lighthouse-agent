@@ -33,7 +33,15 @@ test("real Postgres: ciphertext, process restart, cross-client lock and rollback
     poolB = new Pool(config);
     const migration = await readFile(new URL("../migrations/001_etsy_connections.sql", import.meta.url), "utf8");
     await poolA.query(migration);
-    await poolA.query(migration); // Safe to rerun the additive migration.
+    await poolA.query(migration);
+    // Upgrade the original schema without assigning legacy tokens to any browser.
+    const legacy = { connectionId: "legacy", accessToken: "12345678.legacy", refreshToken: "legacy_refresh" };
+    await poolA.query("INSERT INTO etsy_connections (connection_id, payload) VALUES ($1, $2)", [legacy.connectionId, cipher.encrypt(legacy)]);
+    const ownerMigration = await readFile(new URL("../migrations/002_etsy_connection_owners.sql", import.meta.url), "utf8");
+    await poolA.query(ownerMigration);
+    await poolA.query(ownerMigration);
+    const legacyRow = await poolA.query("SELECT owner_session_hash FROM etsy_connections WHERE connection_id = 'legacy'");
+    assert.equal(legacyRow.rows[0].owner_session_hash, null);
     const repositoryA = createPostgresEtsyConnectionRepository({ pool: poolA, cipher });
     const repositoryB = createPostgresEtsyConnectionRepository({ pool: poolB, cipher });
     setEtsyConnectionRepository(repositoryA);
@@ -48,7 +56,7 @@ test("real Postgres: ciphertext, process restart, cross-client lock and rollback
       (await repositoryA.getByOwnerSessionHash("cd".repeat(32))).connectionId,
       connection.connectionId,
     );
-    const { rows } = await poolA.query("SELECT payload FROM etsy_connections");
+    const { rows } = await poolA.query("SELECT payload FROM etsy_connections WHERE connection_id = $1", [connection.connectionId]);
     assert.equal(rows[0].payload.includes(connection.accessToken), false);
     assert.equal(rows[0].payload.includes(connection.refreshToken), false);
     await poolA.end();
@@ -74,6 +82,33 @@ test("real Postgres: ciphertext, process restart, cross-client lock and rollback
     });
     poolA = new Pool(config);
     const restarted = createPostgresEtsyConnectionRepository({ pool: poolA, cipher });
+    let ownerCreations = 0;
+    await Promise.all([restarted, repositoryB].map(repository => repository.withOwnerLock("ef".repeat(32), async locked => {
+      if (!await locked.getByOwnerSessionHash("ef".repeat(32))) {
+        ownerCreations++;
+        await locked.insert({ ...connection, connectionId: "parallel_owner", ownerSessionHash: "ef".repeat(32) });
+      }
+    })));
+    assert.equal(ownerCreations, 1);
+    // A reconnect on another client waits for an existing refresh row lock.
+    let held;
+    const locked = new Promise(resolve => { held = resolve; });
+    let release;
+    const gate = new Promise(resolve => { release = resolve; });
+    const refreshing = restarted.withLock(connection.connectionId, async store => {
+      held();
+      await gate;
+      const record = await store.get(connection.connectionId);
+      await store.save({ ...record, accessToken: "12345678.old_refresh" });
+    });
+    await locked;
+    const reconnecting = repositoryB.withOwnerLock(connection.ownerSessionHash, async store => {
+      const record = await store.getByOwnerSessionHash(connection.ownerSessionHash);
+      await store.save({ ...record, accessToken: "12345678.new_authorization" });
+    });
+    release();
+    await Promise.all([refreshing, reconnecting]);
+    assert.equal((await restarted.get(connection.connectionId)).accessToken, "12345678.new_authorization");
     let rotations = 0;
     const rotate = repository => repository.withLock(connection.connectionId, async locked => {
       const record = await locked.get(connection.connectionId);

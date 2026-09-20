@@ -18,6 +18,14 @@ export function createMemoryEtsyConnectionRepository() {
       }
       connections.set(connection.connectionId, structuredClone(connection));
     },
+    async withOwnerLock(ownerSessionHash, callback) {
+      return repository.withLock("owner:" + ownerSessionHash, async () => {
+        const existing = await repository.getByOwnerSessionHash(ownerSessionHash);
+        return existing
+          ? repository.withLock(existing.connectionId, callback)
+          : callback(repository);
+      });
+    },
     async withLock(id, callback) {
       const previous = locks.get(id) ?? Promise.resolve();
       let release;

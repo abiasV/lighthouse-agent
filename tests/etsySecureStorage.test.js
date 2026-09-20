@@ -209,3 +209,59 @@ test("Postgres failures expose only a safe storage error", async () => {
   });
   await assert.rejects(repository.get("id"), { message: "ETSY_CONNECTION_STORAGE_UNAVAILABLE" });
 });
+
+test("owner index tampering cannot grant access to another encrypted connection", async () => {
+  const record = { connectionId: "one", ownerSessionHash: "ab".repeat(32), ...tokens };
+  const repository = createPostgresEtsyConnectionRepository({
+    pool: { query: async () => ({ rows: [{ connection_id: "one", payload: cipher.encrypt(record) }] }) },
+    cipher,
+  });
+  await assert.rejects(repository.getByOwnerSessionHash("cd".repeat(32)), /OWNER_MISMATCH/);
+  assert.equal((await repository.getByOwnerSessionHash(record.ownerSessionHash)).connectionId, "one");
+});
+
+test("parallel OAuth completions create only one connection for the same browser", async () => {
+  const ownerSessionHash = "ef".repeat(32);
+  const connections = await Promise.all(Array.from({ length: 5 }, () =>
+    createEtsyConnection({ tokenResult: tokens, ownerSessionHash }),
+  ));
+  assert.equal(new Set(connections.map(connection => connection.connectionId)).size, 1);
+});
+
+test("reconnect waits for an in-flight refresh and preserves the new authorization", async () => {
+  const ownerSessionHash = "ef".repeat(32);
+  const first = await createEtsyConnection({ tokenResult: tokens, ownerSessionHash, now: 1000 });
+  let started;
+  const refreshing = new Promise(resolve => { started = resolve; });
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const refresh = getValidEtsyAccessToken({
+    connectionId: first.connectionId, now: 3000,
+    refreshAccessToken: async () => {
+      started();
+      await gate;
+      return { ...tokens, accessToken: "12345678.old_refresh", expiresInSeconds: 3600 };
+    },
+  });
+  await refreshing;
+  const reconnect = createEtsyConnection({
+    ownerSessionHash, now: 4000,
+    tokenResult: { ...tokens, accessToken: "12345678.new_authorization" },
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  release();
+  await Promise.all([refresh, reconnect]);
+  const saved = await getEtsyConnection(first.connectionId);
+  assert.equal(saved.accessToken, "12345678.new_authorization");
+  assert.equal(saved.createdAt, 1000);
+});
+
+test("replayed browser credentials expire on the server and legacy ownership fails closed", async () => {
+  const { getEtsyConnectionByOwnerSessionHash } = await import("../src/integrations/etsy/auth/etsyConnectionStore.js");
+  const ownerSessionHash = "ef".repeat(32);
+  const connection = await createEtsyConnection({ tokenResult: tokens, ownerSessionHash, now: 1000 });
+  assert.equal((await getEtsyConnectionByOwnerSessionHash(ownerSessionHash, 1001)).connectionId, connection.connectionId);
+  assert.equal(await getEtsyConnectionByOwnerSessionHash(ownerSessionHash, connection.ownerSessionExpiresAt), null);
+  setEtsyConnectionRepository({ getByOwnerSessionHash: async () => ({ ...connection, ownerSessionExpiresAt: undefined }) });
+  assert.equal(await getEtsyConnectionByOwnerSessionHash(ownerSessionHash, 1001), null);
+});

@@ -7,8 +7,21 @@ let pool;
 try {
   pool = new Pool(buildEtsyDatabaseConfig(process.env));
   pool.on("error", () => console.error("ETSY_DATABASE_POOL_ERROR"));
-  const sql = await readFile(new URL("../migrations/001_etsy_connections.sql", import.meta.url), "utf8");
-  await pool.query(sql);
+  // One checked-out client keeps all migrations in the same transaction.
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    for (const file of ["001_etsy_connections.sql", "002_etsy_connection_owners.sql"]) {
+      const sql = await readFile(new URL("../migrations/" + file, import.meta.url), "utf8");
+      await client.query(sql);
+    }
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
   console.log("Etsy connection storage schema is ready.");
 } catch {
   console.error("Etsy storage migration failed. Check the database URL, verified TLS, and database permissions.");

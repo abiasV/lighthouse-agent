@@ -10,7 +10,8 @@
   bound to that browser, connection IDs are not exposed, and read routes resolve
   only the connection owned by the cookie.
 - This is guest-session ownership for the MVP: clearing browser cookies or moving
-  to another browser requires reconnecting Etsy. Account-based ownership can replace
+  to another browser requires reconnecting Etsy. Ownership also expires server-side
+  30 days after authorization. Account-based ownership can replace
   the cookie hash later without changing the encrypted token storage.
 - Next: configure a hosted database, then wire the real Etsy import into the planner.
 - OAuth state/PKCE sessions are still in memory. An authorization attempt interrupted
@@ -54,7 +55,10 @@ npm ci
 npm run db:migrate:etsy
 ```
 
-The migration is additive and safe to rerun. Startup verifies table access and checks
+The migration command applies 001 and 002 together in a transaction and is safe to
+rerun. Migration 002 upgrades the original table without deleting old records. Old
+records without an owner remain inaccessible; pre-expiry-format sessions require
+reconnecting Etsy. Startup verifies the owner column exists and checks
 the encryption key against an existing record, if present. Failed setup disables
 real Etsy routes; it never falls back to memory or plaintext. Database outages during
 requests return errors rather than claiming a successful save.
@@ -87,7 +91,25 @@ It creates/removes only its own random schema, verifies ciphertext, reads the co
 from a fresh Node process, and checks cross-client locking, rollback and corruption.
 Without the URL it is explicitly skipped.
 
-Refreshes are serialized per connection in a PostgreSQL transaction. A provider refresh
+Refreshes and reconnects share a row lock in a PostgreSQL transaction. A separate
+owner advisory lock serializes simultaneous first connections for the same browser. A provider refresh
 and database commit cannot be one atomic operation: if Etsy rotates a token but the
 subsequent commit fails, reauthorization may be required. No shop changes or AI calls
 are made by storage or its tests.
+
+## Review and deployment gates
+
+- Retain `email_r`: the existing `/user` profile route calls Etsy getUser, which requires it.
+  Reference: https://developers.etsy.com/documentation/tutorials/quickstart
+- Owner lookups verify the owner hash inside authenticated ciphertext against the index.
+- OAuth denials validate the browser/state before removing a pending authorization.
+- Render internal Postgres uses self-signed TLS and does not support verify-full.
+  Use the external hostname with verified TLS for this implementation, restricting
+  database network access to the backend's outbound addresses and any migration client.
+  Do not disable certificate verification to make the internal URL connect.
+  Reference: https://render.com/docs/postgresql-creating-connecting
+- Before real seller onboarding: run the real-Postgres integration test, verify
+  persistence after restart, and test an Etsy authorization end-to-end through the
+  production site's proxy. These have not been validated against a hosted database.
+- Browser ownership is an MVP connection boundary, not a Lighthouse account system.
+  OAuth state remains process-local: use one backend instance until it is persistent.

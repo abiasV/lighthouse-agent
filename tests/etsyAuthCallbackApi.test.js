@@ -131,6 +131,7 @@ test("Etsy authorization denial discards the stored OAuth session", async () => 
   const now = Date.now();
 
   createEtsyAuthSession({
+    ownerSessionHash,
     state: "denied_state",
     codeVerifier: "denied_verifier",
     redirectUri: "https://example.com/api/etsy/auth/callback",
@@ -144,6 +145,7 @@ test("Etsy authorization denial discards the stored OAuth session", async () => 
 
   const response = await fetch(
     `${baseUrl}/api/etsy/auth/callback?error=access_denied&error_description=User%20declined&state=denied_state`,
+    { headers: browserHeaders },
   );
 
   assert.equal(response.status, 400);
@@ -318,4 +320,25 @@ test("callback rejects another browser without consuming the rightful OAuth stat
   );
   assert.equal(rightfulResponse.status, 200);
   assert.equal(exchanges, 1);
+});
+
+test("a denied callback from another browser cannot cancel the owner's authorization", async () => {
+  createEtsyAuthSession({
+    ownerSessionHash, state: "protected_denial", codeVerifier: "verifier",
+    redirectUri: "https://example.com/callback", scopes: ["shops_r"],
+  });
+  await startTestServer();
+  const url = `${baseUrl}/api/etsy/auth/callback?error=access_denied&state=protected_denial`;
+  const missing = await fetch(url);
+  assert.equal(missing.status, 401);
+  const wrong = await fetch(url, {
+    headers: { Cookie: `${ETSY_BROWSER_SESSION_COOKIE}=${"B".repeat(43)}` },
+  });
+  assert.equal(wrong.status, 401);
+  assert.equal(getEtsyAuthSessionCount(), 1);
+  assert.equal(wrong.headers.get("cache-control"), "no-store");
+  const owner = await fetch(url, { headers: browserHeaders });
+  assert.equal(owner.status, 400);
+  assert.equal((await owner.json()).error, "ETSY_AUTHORIZATION_DENIED");
+  assert.equal(getEtsyAuthSessionCount(), 0);
 });

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { ETSY_BROWSER_SESSION_MAX_AGE_SECONDS } from "./etsyBrowserSession.js";
 import { createMemoryEtsyConnectionRepository } from "./memoryEtsyConnectionRepository.js";
 
 let repository = createMemoryEtsyConnectionRepository();
@@ -39,46 +40,53 @@ export async function createEtsyConnection({
     throw new Error("ETSY_OWNER_SESSION_INVALID");
   }
 
-  const existingConnection =
-    await repository.getByOwnerSessionHash(ownerSessionHash);
-  const connectionId = existingConnection?.connectionId ?? randomUUID();
+  return repository.withOwnerLock(ownerSessionHash, async locked => {
+    const existingConnection =
+      await locked.getByOwnerSessionHash(ownerSessionHash);
+    const connectionId = existingConnection?.connectionId ?? randomUUID();
 
-  const connection = {
-    connectionId,
-    ownerSessionHash,
-    etsyUserId,
+    const connection = {
+      connectionId,
+      ownerSessionHash,
+      ownerSessionExpiresAt: now + ETSY_BROWSER_SESSION_MAX_AGE_SECONDS * 1000,
+      etsyUserId,
 
-    accessToken: tokenResult.accessToken,
-    refreshToken: tokenResult.refreshToken,
+      accessToken: tokenResult.accessToken,
+      refreshToken: tokenResult.refreshToken,
 
-    tokenType: tokenResult.tokenType,
+      tokenType: tokenResult.tokenType,
 
-    scopes: [...tokenResult.scopes],
+      scopes: [...tokenResult.scopes],
 
-    createdAt: now,
-    updatedAt: now,
+      createdAt: existingConnection?.createdAt ?? now,
+      updatedAt: now,
 
-    accessTokenExpiresAt: now + tokenResult.expiresInSeconds * 1000,
-  };
+      accessTokenExpiresAt: now + tokenResult.expiresInSeconds * 1000,
+    };
 
-  if (existingConnection) {
-    await repository.save(connection);
-  } else {
-    await repository.insert(connection);
-  }
+    if (existingConnection) {
+      await locked.save(connection);
+    } else {
+      await locked.insert(connection);
+    }
 
-  return connection;
+    return connection;
+  });
 }
 
 export async function getEtsyConnection(connectionId) {
   return repository.get(connectionId);
 }
 
-export async function getEtsyConnectionByOwnerSessionHash(ownerSessionHash) {
+export async function getEtsyConnectionByOwnerSessionHash(ownerSessionHash, now = Date.now()) {
   if (typeof ownerSessionHash !== "string" || !/^[a-f0-9]{64}$/.test(ownerSessionHash)) {
     return null;
   }
-  return repository.getByOwnerSessionHash(ownerSessionHash);
+  const connection = await repository.getByOwnerSessionHash(ownerSessionHash);
+  // Enforce expiry on the server too, even if an old cookie is replayed manually.
+  if (!connection || !Number.isFinite(connection.ownerSessionExpiresAt) ||
+      connection.ownerSessionExpiresAt <= now) return null;
+  return connection;
 }
 
 function buildUpdatedConnection(existingConnection, tokenResult, now) {
