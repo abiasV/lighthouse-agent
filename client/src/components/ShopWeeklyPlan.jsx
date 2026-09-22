@@ -117,6 +117,7 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
   const [reportingPeriod, setReportingPeriod] = useState(() => defaultReportingPeriod());
   const [etsyPeriodConfirmed, setEtsyPeriodConfirmed] = useState(false);
   const [shopName, setShopName] = useState("");
+  const [catalogImported, setCatalogImported] = useState(false);
 
   const [weeklyAvailableMinutes, setWeeklyAvailableMinutes] = useState("180");
 
@@ -222,6 +223,24 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
       setEtsyPlanningResult(null);
       setEtsyViewInputs({});
     }
+  }
+
+  function handleCatalogImport(draft) {
+    const hasExistingData = Boolean(plan || shopName.trim() || listings.some(listing =>
+      [listing.title, listing.views, listing.sales, listing.trendPercent].some(value => String(value ?? "").trim()),
+    ));
+    if (hasExistingData && !window.confirm("Replace the current shop form and displayed plan with your Etsy listings? Views and sales will need to be entered again.")) return false;
+    setShopName(draft.shopName);
+    setListings(draft.listings);
+    setCatalogImported(true);
+    setDataSourceMode("MANUAL");
+    setPlan(null);
+    setEtsyPlanningResult(null);
+    setEtsyViewInputs({});
+    setEtsyPeriodConfirmed(false);
+    setIsFormExpanded(true);
+    setError("");
+    return true;
   }
 
   function updateListing(id, field, value) {
@@ -1417,7 +1436,7 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
         </div>
 
         <div className="space-y-4">
-          <EtsyConnection returnStatus={etsyReturnStatus} />
+          <EtsyConnection returnStatus={etsyReturnStatus} onImport={handleCatalogImport} />
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
               Data source
@@ -1513,8 +1532,8 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
               </button>
 
               <p className="mt-3 text-center text-xs leading-5 text-slate-400 dark:text-slate-500">
-                Demo data only. No Etsy account is connected. To review your
-                own shop, choose Enter manually.
+                Demo data only. This does not use your connected Etsy account.
+                To review your shop, import your listings or choose Enter manually.
               </p>
 
               {error && (
@@ -1531,6 +1550,11 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
                 onSubmit={handleSubmit}
                 className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none"
               >
+                {catalogImported && (
+                  <p role="status" className="mb-5 rounded-xl bg-sky-50 p-4 text-sm text-sky-800 dark:bg-sky-950 dark:text-sky-200">
+                    Started from your Etsy shop name and active listing titles. Views, sales, and optional sales trends must be entered for the dates below. No performance numbers were imported or estimated. You can remove listings you do not want to review.
+                  </p>
+                )}
                 <div className="mb-6 border-b border-slate-100 pb-5 dark:border-slate-800">
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">
                     Shop data
@@ -2098,4 +2122,3 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
 }
 
 export default ShopWeeklyPlan;
-

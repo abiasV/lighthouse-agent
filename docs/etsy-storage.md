@@ -38,7 +38,11 @@
   this Etsy app/account.
 - Token persistence was verified after a backend redeploy on 2026-09-22: storage
   initialized successfully and the same production browser session remained connected.
-- Next: wire real Etsy import into the planner.
+- Implemented: browser-owned, read-only shop name and active listing import into the
+  manual planner. Metrics stay blank; existing validation is preserved. Live seller
+  import verification is pending deployment and a seller browser test.
+- Next: import period-based sales from complete order data; never substitute lifetime
+  statistics for reporting-period metrics.
 - OAuth state/PKCE sessions are still in memory. An authorization attempt interrupted
   by a restart must be restarted. Established connections use PostgreSQL when configured.
 - Tests cover browser ownership, encryption, tamper rejection, concurrency, rollback

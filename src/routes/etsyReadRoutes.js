@@ -2,12 +2,14 @@ import express from "express";
 
 import getEtsyAuthenticatedUser from "../integrations/etsy/getEtsyAuthenticatedUser.js";
 import getEtsyUser from "../integrations/etsy/getEtsyUser.js";
+import getEtsyShopCatalog from "../integrations/etsy/getEtsyShopCatalog.js";
 import { getEtsyConnectionByOwnerSessionHash } from "../integrations/etsy/auth/etsyConnectionStore.js";
 import { readEtsyBrowserSession } from "../integrations/etsy/auth/etsyBrowserSession.js";
 
 export function createEtsyReadRouter({
   getAuthenticatedUser = getEtsyAuthenticatedUser,
   getUser = getEtsyUser,
+  getShopCatalog = getEtsyShopCatalog,
   getConnectionByOwnerSessionHash = getEtsyConnectionByOwnerSessionHash,
 } = {}) {
   const router = express.Router();
@@ -43,6 +45,31 @@ export function createEtsyReadRouter({
     }
     return false;
   }
+
+  router.get("/shop/catalog", async (req, res) => {
+    try {
+      const connection = await requireOwnedConnection(req);
+      const catalog = await getShopCatalog({
+        connectionId: connection.connectionId,
+        etsyUserId: connection.etsyUserId,
+        clientId: process.env.ETSY_CLIENT_ID,
+        keystring: process.env.ETSY_CLIENT_ID,
+        sharedSecret: process.env.ETSY_SHARED_SECRET,
+      });
+      return res.json(catalog);
+    } catch (error) {
+      if (handleOwnershipError(error, res)) return;
+      const errors = {
+        ETSY_SHOP_NOT_FOUND: [404, "This Etsy account has no shop. Connect the account that owns your shop, or enter data manually."],
+        ETSY_REAUTHORIZATION_REQUIRED: [401, "Your Etsy connection expired. Please reconnect."],
+        ETSY_RATE_LIMITED: [429, "Etsy is busy. Please try importing again later."],
+        ETSY_CATALOG_TOO_LARGE: [422, "Import currently supports up to 500 active listings. Please use manual entry for selected listings."],
+        ETSY_CATALOG_CHANGED: [502, "The listing collection changed or was incomplete. Nothing was imported. Please try again."],
+      };
+      const [status, message] = errors[error.message] ?? [502, "Could not import your Etsy listings. Nothing was changed. Please retry or use manual entry."];
+      return res.status(status).json({ error: errors[error.message] ? error.message : "ETSY_CATALOG_IMPORT_FAILED", message });
+    }
+  });
 
   // *Read the authenticated Etsy user*
 

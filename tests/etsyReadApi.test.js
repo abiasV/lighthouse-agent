@@ -16,6 +16,7 @@ const browserHeaders = {
 function startTestServer({
   getAuthenticatedUser,
   getUser,
+  getShopCatalog,
   getConnectionByOwnerSessionHash = async hash => ({
     connectionId: "connection_1",
     etsyUserId: "12345678",
@@ -27,6 +28,7 @@ function startTestServer({
   app.use("/api/etsy", createEtsyReadRouter({
     getAuthenticatedUser,
     getUser,
+    getShopCatalog,
     getConnectionByOwnerSessionHash,
   }));
   return new Promise(resolve => {
@@ -153,3 +155,32 @@ test("Etsy user profile returns 404 when the browser owns no connection", async 
     assert.equal((await response.json()).error, "ETSY_CONNECTION_NOT_FOUND");
   } finally { server.close(); }
 });
+
+test("catalog route ignores supplied identity and uses the owned connection", async () => {
+  let captured;
+  const { server, baseUrl } = await startTestServer({ getShopCatalog: async input => {
+    captured = input;
+    return { source: "ETSY", shopName: "Owned Shop", listings: [] };
+  }});
+  try {
+    const response = await request(baseUrl, "/api/etsy/shop/catalog?shopId=attacker&connectionId=attacker");
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.equal(captured.connectionId, "connection_1");
+    assert.equal(captured.etsyUserId, "12345678");
+    assert.equal(captured.shopId, undefined);
+    const missing = await request(baseUrl, "/api/etsy/shop/catalog", { withCookie: false });
+    assert.equal(missing.status, 401);
+  } finally { server.close(); }
+});
+
+for (const [code, status] of [["ETSY_SHOP_NOT_FOUND", 404], ["ETSY_RATE_LIMITED", 429], ["ETSY_REAUTHORIZATION_REQUIRED", 401], ["ETSY_CATALOG_TOO_LARGE", 422], ["ETSY_CATALOG_INVALID", 502]]) {
+  test(`catalog route maps ${code} without exposing provider data`, async () => {
+    const { server, baseUrl } = await startTestServer({ getShopCatalog: async () => { throw new Error(code); } });
+    try {
+      const response = await request(baseUrl, "/api/etsy/shop/catalog");
+      assert.equal(response.status, status);
+      assert.equal((await response.json()).listings, undefined);
+    } finally { server.close(); }
+  });
+}
