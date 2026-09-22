@@ -4,6 +4,7 @@ import {
   requestEtsy,
   requestEtsyWithRetry,
   isLocalEtsyDevelopmentOrigin,
+  shouldRecheckEtsyConnectionAfterPageShow,
   validateEtsyAuthorizationUrl,
 } from "../client/src/utils/etsyConnection.js";
 
@@ -17,6 +18,13 @@ test("client identifies only loopback hosts as local Etsy development", () => {
     assert.equal(isLocalEtsyDevelopmentOrigin({ hostname }), false);
   }
 });
+
+test("client rechecks an unfinished Etsy connection after browser back", () => {
+  assert.equal(shouldRecheckEtsyConnectionAfterPageShow({ persisted: true }, "connecting"), true);
+  assert.equal(shouldRecheckEtsyConnectionAfterPageShow({ persisted: false }, "connecting"), false);
+  assert.equal(shouldRecheckEtsyConnectionAfterPageShow({ persisted: true }, "connected"), false);
+});
+
 function authUrl(callback = `${origin}/api/etsy/auth/callback`) {
   const url = new URL("https://www.etsy.com/oauth/connect");
   url.searchParams.set("redirect_uri", callback);

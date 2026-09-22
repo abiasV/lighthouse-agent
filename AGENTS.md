@@ -52,3 +52,4 @@
 - Respond in Persian. Keep code, commands, paths, and identifiers in English.
 - Be concise and do not add generic introductions or unrelated links.
 - After implementation, report: changes, verification, required local commands, blockers, and the next recommended step.
+- End every implementation report with explicit "Remaining blockers" and "Next recommended step" lines; write "None" when no blocker remains.

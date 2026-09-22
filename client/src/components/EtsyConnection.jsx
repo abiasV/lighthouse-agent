@@ -4,6 +4,7 @@ import {
   isLocalEtsyDevelopmentOrigin,
   requestEtsy,
   requestEtsyWithRetry,
+  shouldRecheckEtsyConnectionAfterPageShow,
   validateEtsyAuthorizationUrl,
 } from "../utils/etsyConnection.js";
 
@@ -17,6 +18,11 @@ export default function EtsyConnection({ returnStatus }) {
     : ETSY_RETURN_MESSAGES[returnStatus] || "");
   const [attempt, setAttempt] = useState(0);
   const activeRequest = useRef(null);
+  const statusRef = useRef(status);
+
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   useEffect(() => {
     if (localDevelopment) return;
@@ -53,6 +59,21 @@ export default function EtsyConnection({ returnStatus }) {
   }, [attempt, localDevelopment, returnStatus]);
 
   useEffect(() => () => activeRequest.current?.abort(), []);
+
+  useEffect(() => {
+    if (localDevelopment) return;
+
+    function handlePageShow(event) {
+      if (!shouldRecheckEtsyConnectionAfterPageShow(event, statusRef.current)) return;
+      activeRequest.current?.abort();
+      setStatus("checking");
+      setMessage("");
+      setAttempt((value) => value + 1);
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [localDevelopment]);
 
   async function connect() {
     activeRequest.current?.abort();

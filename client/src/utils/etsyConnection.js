@@ -8,6 +8,10 @@ export function isLocalEtsyDevelopmentOrigin(location) {
   return ["localhost", "127.0.0.1", "::1"].includes(location?.hostname);
 }
 
+export function shouldRecheckEtsyConnectionAfterPageShow(event, status) {
+  return event?.persisted === true && status === "connecting";
+}
+
 export function validateEtsyAuthorizationUrl(value, origin) {
   const url = new URL(value);
   const callback = new URL(url.searchParams.get("redirect_uri"));
