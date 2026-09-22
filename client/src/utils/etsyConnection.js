@@ -1,5 +1,5 @@
 export const ETSY_RETURN_MESSAGES = {
-  switched: "Lighthouse is disconnected. Sign out on Etsy, sign in to your other account, then return here and select Connect Etsy. Disconnecting Lighthouse does not sign you out of Etsy.",
+  switched: "Lighthouse is disconnected. Open Etsy in a new tab, use your account menu to sign out, then sign in to your other account. Return to this tab and select Connect Etsy. Lighthouse cannot sign you out of Etsy.",
   denied: "Etsy authorization was cancelled. You can connect again whenever you are ready.",
   expired: "The connection request expired or belongs to another browser. Start again in this browser.",
   failed: "The Etsy connection could not be completed. Please try connecting again.",

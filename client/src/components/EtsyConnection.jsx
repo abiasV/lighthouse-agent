@@ -59,7 +59,8 @@ export default function EtsyConnection({ returnStatus, onImport }) {
         setStatus("disconnected");
         setMessage(returnStatus === "connected"
           ? "The connection could not be verified in this browser. Please reconnect."
-          : error.code === "ETSY_REAUTHORIZATION_REQUIRED" ? "Your Etsy connection needs to be renewed." : "");
+          : error.code === "ETSY_REAUTHORIZATION_REQUIRED" ? "Your Etsy connection needs to be renewed."
+          : returnStatus === "switched" ? ETSY_RETURN_MESSAGES.switched : "No Etsy account is connected. Select Connect Etsy to continue.");
       } else {
         setStatus("error");
         setMessage(controller.signal.aborted ? "The server is taking too long. Please try again." : error.message);
@@ -189,7 +190,7 @@ export default function EtsyConnection({ returnStatus, onImport }) {
           </button>
         )}
         {returnStatus === "switched" && (
-          <a href="https://www.etsy.com/" target="_blank" rel="noopener noreferrer" className="px-4 py-3 text-sm font-semibold text-indigo-600">Open Etsy to change account</a>
+          <a href="https://www.etsy.com/" target="_blank" rel="noopener noreferrer" className="px-4 py-3 text-sm font-semibold text-indigo-600">Open Etsy in a new tab</a>
         )}
         {!localDevelopment && status === "connected" && onImport && (
           <button type="button" disabled={busy} onClick={importCatalog}

@@ -191,3 +191,17 @@ app's permissions on Etsy. No schema migration is required.
 Next verification: switch between two real accounts in the deployed planner and
 confirm the new shop name before importing. Automated tests use mocked Etsy data;
 the optional PostgreSQL integration test needs a dedicated local test database.
+
+## Pilot readiness (2026-09-22)
+
+- Seller screenshots confirm the connected shop name, empty-catalog handling,
+  and disconnect UI. A populated second shop import remains unverified.
+- Keep switch guidance visible after Retry check; the Etsy account-menu link
+  deliberately opens a separate tab and does not log out the user automatically.
+- Before inviting sellers to connect, confirm Etsy commercial-access eligibility
+  (personal access is limited to five shops) and implement server-enforced private
+  access bound to verified identity. A shareable invitation URL is not sufficient.
+- Existing betaAccessGuard covers real opportunity execution only, and its usage
+  counters are in memory. It is not a site-wide access gate or durable cost cap.
+- The import pilot should keep paid AI disabled, enforce access on the direct
+  backend as well as the UI, and test denial/revocation before sending access links.
