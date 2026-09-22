@@ -7,7 +7,8 @@
   and safe handling of missing or invalid configuration.
 - Hosted test setup: Render PostgreSQL and backend secret settings are configured.
   Verified-TLS schema migration succeeded and backend commit 30d9aaf was Live on
-  2026-09-21. This does not yet verify an actual Etsy token round trip.
+  2026-09-21. On 2026-09-22, the production OAuth flow completed and the
+  authenticated connection check succeeded, verifying a real Etsy token round trip.
 - The free test database expires on 2026-10-20. Arrange migration or an explicitly
   approved hosting plan before expiry; no paid upgrade has been authorized.
 - Render Start Command is `npm run db:migrate:etsy && node server.js`, so the
@@ -30,8 +31,13 @@
   JSON API clients retain their existing callback contract.
 - Connection UI checks that the OAuth callback matches the current site origin.
   Sample/manual planning remains available; connecting does not import shop data.
-- Next: confirm the registered callback, test production-origin OAuth and token
-  persistence after restart, then wire real Etsy import into the planner.
+- Production OAuth verification: Render and Etsy use the Netlify callback below,
+  Netlify commit 7c904f9 was Published, OAuth returned to the planner, and
+  /api/etsy/me verified the authenticated connection. Etsy did not display a new
+  consent screen, which is consistent with an authorization already granted to
+  this Etsy app/account.
+- Next: verify token persistence after a backend restart, then wire real Etsy
+  import into the planner.
 - OAuth state/PKCE sessions are still in memory. An authorization attempt interrupted
   by a restart must be restarted. Established connections use PostgreSQL when configured.
 - Tests cover browser ownership, encryption, tamper rejection, concurrency, rollback
@@ -127,9 +133,8 @@ are made by storage or its tests.
   Do not disable certificate verification to make the internal URL connect.
   Reference: https://render.com/docs/postgresql-creating-connecting
 - Before real seller onboarding: verify encrypted connection persistence after a
-  backend restart and test Etsy authorization end-to-end through the production
-  site's proxy. Migration and startup have been validated against hosted PostgreSQL;
-  an actual Etsy token round trip has not.
+  backend restart. Production-origin OAuth through the Netlify proxy and the hosted
+  PostgreSQL token round trip have been validated.
 - Browser ownership is an MVP connection boundary, not a Lighthouse account system.
   OAuth state remains process-local: use one backend instance until it is persistent.
 
@@ -143,13 +148,14 @@ https://lighthouse-agent-app.netlify.app/api/etsy/auth/callback
 
 The existing Netlify /api proxy forwards both authorization and callback requests.
 Do not use the Render origin, localhost, or a deploy-preview origin for this test.
-Cloud Render sign-in was unavailable during the UI implementation, so the currently
-saved callback configuration was not verified.
+The callback was verified in both Render and the Etsy app on 2026-09-22. Localhost
+is expected to report the connection as unavailable unless its backend and a
+separate registered local callback are explicitly configured.
 
-After both deployments complete, open the production homepage, choose Build My Weekly
-Growth Plan, then Connect Etsy. Authorize on Etsy and expect to return to the planner
-with "Your Etsy connection has been verified." Cancelled, expired and failed attempts
-show a retry message without claiming success. Check connection reads /api/etsy/me.
+The production test completed successfully on 2026-09-22: Connect Etsy returned to
+the planner and displayed "Your Etsy connection has been verified." Cancelled,
+expired and failed attempts show a retry message without claiming success. Check
+connection reads /api/etsy/me.
 Never send screenshots containing OAuth codes, cookies or tokens.
 
 For persistence verification, keep that browser's cookies, restart the backend, then
