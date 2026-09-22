@@ -13,6 +13,22 @@ const browserHeaders = {
   Cookie: `${ETSY_BROWSER_SESSION_COOKIE}=${browserToken}`,
 };
 
+test("shop summary requires ownership and requests metadata only", async () => {
+  let captured;
+  const { server, baseUrl } = await startTestServer({ getShopCatalog: async args => {
+    captured = args; return { shopId: "22", shopName: "Owned Shop" };
+  } });
+  try {
+    assert.equal((await request(baseUrl, "/api/etsy/shop", { withCookie: false })).status, 401);
+    assert.equal(captured, undefined);
+    const response = await request(baseUrl, "/api/etsy/shop?connectionId=foreign");
+    assert.equal(response.status, 200);
+    assert.equal(captured.summaryOnly, true);
+    assert.equal(captured.connectionId, "connection_1");
+    assert.deepEqual(await response.json(), { shopId: "22", shopName: "Owned Shop" });
+  } finally { server.close(); }
+});
+
 function startTestServer({
   getAuthenticatedUser,
   getUser,

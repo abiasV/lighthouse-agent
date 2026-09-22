@@ -1,4 +1,6 @@
 import express from "express";
+import { disconnectEtsyConnection } from "../integrations/etsy/auth/etsyConnectionStore.js";
+import { ETSY_BROWSER_SESSION_COOKIE } from "../integrations/etsy/auth/etsyBrowserSession.js";
 
 import buildEtsyAuthorizationRequest from "../integrations/etsy/auth/buildEtsyAuthorizationRequest.js";
 
@@ -11,7 +13,7 @@ import {
   serializeEtsyBrowserSessionCookie,
 } from "../integrations/etsy/auth/etsyBrowserSession.js";
 
-export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
+export function createEtsyAuthRouter({ exchangeAuthorizationCode, disconnect = disconnectEtsyConnection } = {}) {
   const router = express.Router();
   router.use((_req, res, next) => {
     res.set("Cache-Control", "no-store");
@@ -20,6 +22,24 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
   });
 
   // Start an Etsy OAuth authorization request
+
+  router.post("/disconnect", async (req, res) => {
+    let trustedOrigin;
+    try { trustedOrigin = new URL(process.env.ETSY_REDIRECT_URI).origin; }
+    catch { return res.status(503).json({ error: "ETSY_CONFIGURATION_REQUIRED" }); }
+    if (req.get("Origin") !== trustedOrigin || req.get("X-Lighthouse-Action") !== "disconnect") {
+      return res.status(403).json({ error: "ETSY_DISCONNECT_ORIGIN_REJECTED" });
+    }
+    try {
+      const session = readEtsyBrowserSession(req);
+      if (session) await disconnect(session.ownerSessionHash);
+      const secure = process.env.NODE_ENV === "production" || Boolean(process.env.RENDER);
+      res.set("Set-Cookie", `${ETSY_BROWSER_SESSION_COOKIE}=; Path=/api/etsy; HttpOnly; SameSite=Lax; Max-Age=0${secure ? "; Secure" : ""}`);
+      return res.json({ connected: false });
+    } catch {
+      return res.status(503).json({ error: "ETSY_DISCONNECT_FAILED", message: "Could not disconnect Etsy. Please retry before switching accounts." });
+    }
+  });
 
   router.get("/start", (req, res) => {
     try {

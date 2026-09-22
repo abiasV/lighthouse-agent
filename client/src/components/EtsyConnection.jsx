@@ -18,6 +18,9 @@ export default function EtsyConnection({ returnStatus, onImport }) {
     ? "Real Etsy connection is available on the deployed Lighthouse site. Use sample or manual data during local development."
     : ETSY_RETURN_MESSAGES[returnStatus] || "");
   const [attempt, setAttempt] = useState(0);
+  const [switching, setSwitching] = useState(false);
+  const [shopName, setShopName] = useState("");
+  const switchRequest = useRef(null);
   const activeRequest = useRef(null);
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState("");
@@ -46,6 +49,10 @@ export default function EtsyConnection({ returnStatus, onImport }) {
       if (data.connected !== true) throw new Error("Could not verify your Etsy connection. Please try again.");
       setStatus("connected");
       setMessage("Your Etsy connection has been verified.");
+      setShopName("");
+      return requestEtsy("/api/etsy/shop", { signal: controller.signal }).then(shop => {
+        if (!controller.signal.aborted && typeof shop.shopName === "string") setShopName(shop.shopName);
+      }).catch(() => { /* Verification remains valid when shop details are unavailable. */ });
     }).catch((error) => {
       if (controller.signal.aborted && controller.signal.reason !== "timeout") return;
       if (["ETSY_BROWSER_SESSION_REQUIRED", "ETSY_CONNECTION_NOT_FOUND", "ETSY_REAUTHORIZATION_REQUIRED"].includes(error.code)) {
@@ -66,6 +73,29 @@ export default function EtsyConnection({ returnStatus, onImport }) {
 
   useEffect(() => () => activeRequest.current?.abort(), []);
   useEffect(() => () => importRequest.current?.abort(), []);
+  useEffect(() => () => switchRequest.current?.abort(), []);
+
+  async function switchAccount() {
+    if (switchRequest.current || !window.confirm("Disconnect this Etsy account? This will clear the form and plan currently displayed. Your Etsy shop will not be changed.")) return;
+    activeRequest.current?.abort();
+    importRequest.current?.abort();
+    const controller = new AbortController();
+    switchRequest.current = controller;
+    setSwitching(true);
+    const timeout = setTimeout(() => controller.abort(), 60000);
+    try {
+      const result = await requestEtsy("/api/etsy/auth/disconnect", {
+        method: "POST", headers: { "X-Lighthouse-Action": "disconnect" }, signal: controller.signal,
+      });
+      if (controller.signal.aborted || result.connected !== false) throw new Error("Disconnect not confirmed");
+      // A fresh planner also discards in-flight requests and old account data.
+      window.location.replace("/?etsy=switched");
+    } catch {
+      setMessage("Disconnect could not be confirmed. Retry Switch Etsy Account before connecting another account.");
+      setSwitching(false);
+      switchRequest.current = null;
+    } finally { clearTimeout(timeout); }
+  }
 
   async function importCatalog() {
     if (importRequest.current || !onImport) return;
@@ -137,7 +167,7 @@ export default function EtsyConnection({ returnStatus, onImport }) {
     }
   }
 
-  const busy = importing || status === "checking" || status === "connecting";
+  const busy = switching || importing || status === "checking" || status === "connecting";
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900" aria-busy={busy}>
       <h3 className="font-bold text-slate-900 dark:text-white">Connect your Etsy account</h3>
@@ -150,7 +180,17 @@ export default function EtsyConnection({ returnStatus, onImport }) {
           ? message || "Checking your connection…"
           : status === "connecting" ? "Opening Etsy…" : message}
       </p>
+      {status === "connected" && shopName && <p className="mt-2 text-sm font-semibold">Connected shop: {shopName}</p>}
       <div className="mt-3 flex flex-wrap gap-3">
+        {!localDevelopment && status === "connected" && (
+          <button type="button" disabled={busy} onClick={switchAccount}
+            className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50 dark:text-slate-200">
+            {switching ? "Disconnecting…" : "Switch Etsy Account"}
+          </button>
+        )}
+        {returnStatus === "switched" && (
+          <a href="https://www.etsy.com/" target="_blank" rel="noopener noreferrer" className="px-4 py-3 text-sm font-semibold text-indigo-600">Open Etsy to change account</a>
+        )}
         {!localDevelopment && status === "connected" && onImport && (
           <button type="button" disabled={busy} onClick={importCatalog}
             className="rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">

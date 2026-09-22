@@ -46,10 +46,11 @@ export function createEtsyReadRouter({
     return false;
   }
 
-  router.get("/shop/catalog", async (req, res) => {
+  router.get(["/shop/catalog", "/shop"], async (req, res) => {
     try {
       const connection = await requireOwnedConnection(req);
       const catalog = await getShopCatalog({
+        summaryOnly: req.path === "/shop",
         connectionId: connection.connectionId,
         etsyUserId: connection.etsyUserId,
         clientId: process.env.ETSY_CLIENT_ID,

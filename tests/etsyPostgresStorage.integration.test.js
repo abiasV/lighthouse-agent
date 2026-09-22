@@ -129,6 +129,9 @@ test("real Postgres: ciphertext, process restart, cross-client lock and rollback
     assert.equal((await repositoryB.get(connection.connectionId)).refreshToken, "rotated_refresh");
     await poolB.query("UPDATE etsy_connections SET payload = 'corrupt' WHERE connection_id = $1", [connection.connectionId]);
     await assert.rejects(restarted.get(connection.connectionId), /DECRYPTION_FAILED/);
+    await restarted.withOwnerLock(connection.ownerSessionHash, locked => locked.removeByOwnerSessionHash(connection.ownerSessionHash));
+    assert.equal(await repositoryB.get(connection.connectionId), null);
+    assert.ok(await repositoryB.get("parallel_owner"));
   } finally {
     setEtsyConnectionRepository(createMemoryEtsyConnectionRepository());
     if (poolA) await poolA.end();

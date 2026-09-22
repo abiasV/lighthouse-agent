@@ -30,6 +30,9 @@ export function createPostgresEtsyConnectionRepository({ pool, cipher }) {
           [connection.connectionId, connection.ownerSessionHash, cipher.encrypt(connection)],
         );
       },
+      async removeByOwnerSessionHash(ownerSessionHash) {
+        await query(client, "DELETE FROM etsy_connections WHERE owner_session_hash = $1", [ownerSessionHash]);
+      },
       async save(connection) {
         const result = await query(client,
           "UPDATE etsy_connections SET payload = $2 WHERE connection_id = $1",

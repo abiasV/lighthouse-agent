@@ -12,6 +12,11 @@ export function createMemoryEtsyConnectionRepository() {
     async insert(connection) {
       connections.set(connection.connectionId, structuredClone(connection));
     },
+    async removeByOwnerSessionHash(ownerSessionHash) {
+      for (const [id, connection] of connections) {
+        if (connection.ownerSessionHash === ownerSessionHash) connections.delete(id);
+      }
+    },
     async save(connection) {
       if (!connections.has(connection.connectionId)) {
         throw new Error("ETSY_CONNECTION_NOT_FOUND");

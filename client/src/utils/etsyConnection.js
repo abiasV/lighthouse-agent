@@ -1,4 +1,5 @@
 export const ETSY_RETURN_MESSAGES = {
+  switched: "Lighthouse is disconnected. Sign out on Etsy, sign in to your other account, then return here and select Connect Etsy. Disconnecting Lighthouse does not sign you out of Etsy.",
   denied: "Etsy authorization was cancelled. You can connect again whenever you are ready.",
   expired: "The connection request expired or belongs to another browser. Start again in this browser.",
   failed: "The Etsy connection could not be completed. Please try connecting again.",
@@ -24,13 +25,14 @@ export function validateEtsyAuthorizationUrl(value, origin) {
   return url.href;
 }
 
-export async function requestEtsy(path, { signal, fetchImpl = fetch } = {}) {
+export async function requestEtsy(path, { signal, fetchImpl = fetch, method = "GET", headers = {} } = {}) {
   let response;
   try {
     response = await fetchImpl(path, {
       credentials: "same-origin",
       cache: "no-store",
-      headers: { Accept: "application/json" },
+      method,
+      headers: { Accept: "application/json", ...headers },
       signal,
     });
   } catch {

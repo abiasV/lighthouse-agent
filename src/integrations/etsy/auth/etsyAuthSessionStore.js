@@ -79,3 +79,9 @@ export function getEtsyAuthSessionCount(now = Date.now()) {
 export function clearEtsyAuthSessions() {
   etsyAuthSessions.clear();
 }
+
+export function discardEtsyAuthSessionsForOwner(ownerSessionHash) {
+  for (const [state, session] of etsyAuthSessions) {
+    if (session.ownerSessionHash === ownerSessionHash) etsyAuthSessions.delete(state);
+  }
+}

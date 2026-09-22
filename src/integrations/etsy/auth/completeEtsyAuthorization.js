@@ -5,6 +5,7 @@ import exchangeEtsyAuthorizationCode from "./exchangeEtsyAuthorizationCode.js";
 import {
   buildPublicEtsyConnection,
   createEtsyConnection,
+  withEtsyOwnerLock,
 } from "./etsyConnectionStore.js";
 
 function hasAllRequiredScopes(grantedScopes, requiredScopes) {
@@ -27,33 +28,37 @@ export default async function completeEtsyAuthorization({
     throw new Error("ETSY_AUTHORIZATION_CODE_REQUIRED");
   }
 
-  const authSession = consumeEtsyAuthSession(state.trim(), now, {
-    ownerSessionHash,
+  // Serialize completion with disconnect, including the provider exchange.
+  return withEtsyOwnerLock(ownerSessionHash, async lockedRepository => {
+    const authSession = consumeEtsyAuthSession(state.trim(), now, {
+      ownerSessionHash,
+    });
+
+    if (!authSession) {
+      throw new Error("INVALID_OR_EXPIRED_ETSY_OAUTH_STATE");
+    }
+
+    const tokenResult = await exchangeAuthorizationCode({
+      clientId,
+      code: code.trim(),
+      codeVerifier: authSession.codeVerifier,
+      redirectUri: authSession.redirectUri,
+    });
+
+    if (!hasAllRequiredScopes(tokenResult.scopes, authSession.scopes)) {
+      throw new Error("ETSY_REQUIRED_SCOPE_NOT_GRANTED");
+    }
+
+    const connection = await createEtsyConnection({
+      tokenResult,
+      lockedRepository,
+      ownerSessionHash,
+      now,
+    });
+
+    return {
+      connectionId: connection.connectionId,
+      connection: buildPublicEtsyConnection(connection),
+    };
   });
-
-  if (!authSession) {
-    throw new Error("INVALID_OR_EXPIRED_ETSY_OAUTH_STATE");
-  }
-
-  const tokenResult = await exchangeAuthorizationCode({
-    clientId,
-    code: code.trim(),
-    codeVerifier: authSession.codeVerifier,
-    redirectUri: authSession.redirectUri,
-  });
-
-  if (!hasAllRequiredScopes(tokenResult.scopes, authSession.scopes)) {
-    throw new Error("ETSY_REQUIRED_SCOPE_NOT_GRANTED");
-  }
-
-  const connection = await createEtsyConnection({
-    tokenResult,
-    ownerSessionHash,
-    now,
-  });
-
-  return {
-    connectionId: connection.connectionId,
-    connection: buildPublicEtsyConnection(connection),
-  };
 }

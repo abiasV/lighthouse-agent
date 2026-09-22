@@ -7,6 +7,15 @@ const shop = { shop_id: 22, user_id: 11, shop_name: "Real Shop", email: "private
 const listing = id => ({ listing_id: id, shop_id: 22, state: "active", title: `Product ${id}`, views: 9000, num_favorers: 90 });
 const read = apiGet => getEtsyShopCatalog({ etsyUserId: "11", connectionId: "owned", apiGet });
 
+test("shop summary returns only owned identity without loading listings", async () => {
+  let calls = 0;
+  const result = await getEtsyShopCatalog({ etsyUserId: "11", summaryOnly: true, apiGet: async args => {
+    calls++; assert.equal(args.path, "/application/users/11/shops"); return shop;
+  } });
+  assert.equal(calls, 1);
+  assert.deepEqual(result, { shopId: "22", shopName: "Real Shop" });
+});
+
 test("catalog follows pagination, uses owned identity and excludes lifetime metrics and private fields", async () => {
   const calls = [];
   const result = await read(async args => {

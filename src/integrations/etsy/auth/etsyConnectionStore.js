@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { discardEtsyAuthSessionsForOwner } from "./etsyAuthSessionStore.js";
 import { ETSY_BROWSER_SESSION_MAX_AGE_SECONDS } from "./etsyBrowserSession.js";
 import { createMemoryEtsyConnectionRepository } from "./memoryEtsyConnectionRepository.js";
 
@@ -26,6 +27,7 @@ export async function createEtsyConnection({
   tokenResult,
   ownerSessionHash,
   now = Date.now(),
+  lockedRepository,
 }) {
   const etsyUserId = extractEtsyUserId(tokenResult.accessToken);
 
@@ -40,7 +42,7 @@ export async function createEtsyConnection({
     throw new Error("ETSY_OWNER_SESSION_INVALID");
   }
 
-  return repository.withOwnerLock(ownerSessionHash, async locked => {
+  const save = async locked => {
     const existingConnection =
       await locked.getByOwnerSessionHash(ownerSessionHash);
     const connectionId = existingConnection?.connectionId ?? randomUUID();
@@ -71,6 +73,18 @@ export async function createEtsyConnection({
     }
 
     return connection;
+  };
+  return lockedRepository ? save(lockedRepository) : repository.withOwnerLock(ownerSessionHash, save);
+}
+
+export function withEtsyOwnerLock(ownerSessionHash, callback) {
+  return repository.withOwnerLock(ownerSessionHash, callback);
+}
+
+export async function disconnectEtsyConnection(ownerSessionHash) {
+  return repository.withOwnerLock(ownerSessionHash, async locked => {
+    await locked.removeByOwnerSessionHash(ownerSessionHash);
+    discardEtsyAuthSessionsForOwner(ownerSessionHash);
   });
 }
 

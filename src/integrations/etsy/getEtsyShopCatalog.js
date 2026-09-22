@@ -10,7 +10,7 @@ function positiveId(value) {
 
 // Only identifiers and titles leave this adapter. Lifetime views/sales are
 // deliberately excluded: they are not reporting-period performance metrics.
-export default async function getEtsyShopCatalog({ etsyUserId, apiGet = etsyApiGet, ...credentials }) {
+export default async function getEtsyShopCatalog({ etsyUserId, summaryOnly = false, apiGet = etsyApiGet, ...credentials }) {
   const userId = positiveId(etsyUserId);
   const signal = AbortSignal.timeout(45000);
   const get = (path, query) => apiGet({
@@ -33,6 +33,7 @@ export default async function getEtsyShopCatalog({ etsyUserId, apiGet = etsyApiG
     throw new Error("ETSY_CATALOG_INVALID");
   }
 
+  if (summaryOnly) return { shopId, shopName: shop.shop_name.trim() };
   const listings = [];
   const ids = new Set();
   let expectedCount;

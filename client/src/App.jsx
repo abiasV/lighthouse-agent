@@ -9,7 +9,7 @@ function App() {
 
   const [etsyReturnStatus] = useState(() => {
     const status = new URLSearchParams(window.location.search).get("etsy");
-    return ["connected", "denied", "expired", "failed"].includes(status) ? status : null;
+    return ["connected", "denied", "expired", "failed", "switched"].includes(status) ? status : null;
   });
   const [view, setView] = useState(() => etsyReturnStatus ? "shopPlan" : "landing");
 
@@ -1927,4 +1927,3 @@ function App() {
 }
 
 export default App;
-

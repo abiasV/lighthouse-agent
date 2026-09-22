@@ -171,3 +171,23 @@ same production browser cookie; Check connection still verified the Etsy account
 Implementation verification: 28 focused OAuth, ownership/read and client request tests
 passed; client lint and production build passed. These tests use mocked Etsy responses,
 not live seller credentials.
+
+## Switching the connected account
+
+The planner supports one Etsy account per browser session. Switch Etsy Account
+confirms clearing the displayed draft/plan, then POSTs to /api/etsy/auth/disconnect.
+The endpoint requires the configured callback origin and a custom action header,
+deletes only that browser owner's stored credentials, invalidates pending OAuth
+state, and expires the HttpOnly cookie only after successful deletion. Owner and
+row locks serialize deletion with OAuth completion and token refresh. OAuth state
+is still process-local; the single-backend-instance requirement remains.
+
+The planner reloads after success to discard old form data and in-flight UI work.
+It shows the connected shop name when available through the read-only /api/etsy/shop
+summary. Users must sign out on Etsy and sign into their other account before
+connecting again. Lighthouse disconnect does not log out of Etsy or revoke the
+app's permissions on Etsy. No schema migration is required.
+
+Next verification: switch between two real accounts in the deployed planner and
+confirm the new shop name before importing. Automated tests use mocked Etsy data;
+the optional PostgreSQL integration test needs a dedicated local test database.
