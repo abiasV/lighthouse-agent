@@ -80,6 +80,7 @@ export default function EtsyConnection({ returnStatus }) {
     const controller = new AbortController();
     activeRequest.current = controller;
     const timeout = setTimeout(() => controller.abort("timeout"), 60000);
+    statusRef.current = "connecting";
     setStatus("connecting");
     setMessage("");
     try {
