@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { requestEtsy, validateEtsyAuthorizationUrl } from "../client/src/utils/etsyConnection.js";
+import {
+  requestEtsy,
+  requestEtsyWithRetry,
+  validateEtsyAuthorizationUrl,
+} from "../client/src/utils/etsyConnection.js";
 
 const origin = "https://lighthouse-agent-app.netlify.app";
 function authUrl(callback = `${origin}/api/etsy/auth/callback`) {
@@ -34,4 +38,45 @@ test("client preserves session error codes but does not expose provider error te
     return true;
   });
   await assert.rejects(requestEtsy("/api/etsy/me", { fetchImpl: async () => new Response("<html>loading</html>") }), /unexpected response/);
+});
+
+test("client retries temporary 503 responses before reporting a failure", async () => {
+  let requests = 0;
+  let retries = 0;
+  const result = await requestEtsyWithRetry("/api/etsy/me", {
+    retries: 2,
+    retryDelayMs: 0,
+    onRetry: () => { retries += 1; },
+    fetchImpl: async () => {
+      requests += 1;
+      if (requests < 3) {
+        return new Response(JSON.stringify({ error: "ETSY_CONNECTION_STORAGE_NOT_CONFIGURED" }), {
+          status: 503,
+        });
+      }
+      return new Response(JSON.stringify({ connected: true }), { status: 200 });
+    },
+  });
+
+  assert.equal(result.connected, true);
+  assert.equal(requests, 3);
+  assert.equal(retries, 2);
+});
+
+test("client stops retrying 503 responses at the configured limit", async () => {
+  let requests = 0;
+  await assert.rejects(requestEtsyWithRetry("/api/etsy/me", {
+    retries: 2,
+    retryDelayMs: 0,
+    fetchImpl: async () => {
+      requests += 1;
+      return new Response(JSON.stringify({ error: "ETSY_CONNECTION_STORAGE_NOT_CONFIGURED" }), {
+        status: 503,
+      });
+    },
+  }), (error) => {
+    assert.equal(error.status, 503);
+    return true;
+  });
+  assert.equal(requests, 3);
 });

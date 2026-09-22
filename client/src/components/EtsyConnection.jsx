@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ETSY_RETURN_MESSAGES, requestEtsy, validateEtsyAuthorizationUrl } from "../utils/etsyConnection.js";
+import {
+  ETSY_RETURN_MESSAGES,
+  requestEtsy,
+  requestEtsyWithRetry,
+  validateEtsyAuthorizationUrl,
+} from "../utils/etsyConnection.js";
 
 export default function EtsyConnection({ returnStatus }) {
   const [status, setStatus] = useState(ETSY_RETURN_MESSAGES[returnStatus] ? "error" : "checking");
@@ -12,7 +17,12 @@ export default function EtsyConnection({ returnStatus }) {
     const controller = new AbortController();
     activeRequest.current = controller;
     const timeout = setTimeout(() => controller.abort("timeout"), 60000);
-    requestEtsy("/api/etsy/me", { signal: controller.signal }).then((data) => {
+    requestEtsyWithRetry("/api/etsy/me", {
+      signal: controller.signal,
+      onRetry: () => setMessage(
+        "Lighthouse is waking up. Checking your Etsy connection again…",
+      ),
+    }).then((data) => {
       if (controller.signal.aborted) return;
       if (data.connected !== true) throw new Error("Could not verify your Etsy connection. Please try again.");
       setStatus("connected");
@@ -72,7 +82,9 @@ export default function EtsyConnection({ returnStatus }) {
         Automatic shop import is not available yet; use manual entry or sample data below.
       </p>
       <p className="mt-3 text-sm text-slate-700 dark:text-slate-200" role="status" aria-live="polite">
-        {status === "checking" ? "Checking your connection…" : status === "connecting" ? "Opening Etsy…" : message}
+        {status === "checking"
+          ? message || "Checking your connection…"
+          : status === "connecting" ? "Opening Etsy…" : message}
       </p>
       <div className="mt-3 flex flex-wrap gap-3">
         {status !== "connected" && (

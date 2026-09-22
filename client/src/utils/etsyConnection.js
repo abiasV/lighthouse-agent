@@ -41,7 +41,54 @@ export async function requestEtsy(path, { signal, fetchImpl = fetch } = {}) {
         ? "Etsy is busy. Please wait a moment before trying again."
         : "Could not check your Etsy connection. Please try again.");
     error.code = data.error;
+    error.status = response.status;
     throw error;
   }
   return data;
+}
+
+function waitForRetry(delayMs, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new Error("ETSY_REQUEST_ABORTED"));
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      signal?.removeEventListener("abort", handleAbort);
+      resolve();
+    }, delayMs);
+
+    function handleAbort() {
+      clearTimeout(timeout);
+      reject(new Error("ETSY_REQUEST_ABORTED"));
+    }
+
+    signal?.addEventListener("abort", handleAbort, { once: true });
+  });
+}
+
+export async function requestEtsyWithRetry(path, {
+  retries = 3,
+  retryDelayMs = 5000,
+  onRetry,
+  ...options
+} = {}) {
+  let retryCount = 0;
+
+  while (true) {
+    try {
+      return await requestEtsy(path, options);
+    } catch (error) {
+      const canRetry = error.status === 503 &&
+        retryCount < retries &&
+        !options.signal?.aborted;
+
+      if (!canRetry) throw error;
+
+      retryCount += 1;
+      onRetry?.(retryCount);
+      await waitForRetry(retryDelayMs, options.signal);
+    }
+  }
 }
