@@ -52,7 +52,7 @@ export function attachPendingApprovalProposal(state) {
   };
 }
 
-export function createStoredShopPlan({ shopData, executionPlan }) {
+export function createStoredShopPlan({ shopData, executionPlan, pilotOwnerId }) {
   const validation = validateExecutionPlan(executionPlan);
 
   if (!validation.valid) {
@@ -70,6 +70,7 @@ export function createStoredShopPlan({ shopData, executionPlan }) {
   const state = {
     shopData,
     executionPlan,
+    ...(pilotOwnerId ? { pilotOwnerId } : {}),
   };
 
   const stateWithProposal = attachPendingApprovalProposal(state);

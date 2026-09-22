@@ -9,7 +9,7 @@ import {
   validateEtsyAuthorizationUrl,
 } from "../utils/etsyConnection.js";
 
-export default function EtsyConnection({ returnStatus, onImport }) {
+export default function EtsyConnection({ returnStatus, onImport, onPilotChange }) {
   const localDevelopment = isLocalEtsyDevelopmentOrigin(window.location);
   const [status, setStatus] = useState(localDevelopment
     ? "local-development"
@@ -26,6 +26,8 @@ export default function EtsyConnection({ returnStatus, onImport }) {
   const [importMessage, setImportMessage] = useState("");
   const importRequest = useRef(null);
   const onImportRef = useRef(onImport);
+  const onPilotRef = useRef(onPilotChange);
+  useEffect(() => { onPilotRef.current = onPilotChange; }, [onPilotChange]);
   useEffect(() => { onImportRef.current = onImport; }, [onImport]);
   const statusRef = useRef(status);
 
@@ -49,6 +51,7 @@ export default function EtsyConnection({ returnStatus, onImport }) {
       if (data.connected !== true) throw new Error("Could not verify your Etsy connection. Please try again.");
       setStatus("connected");
       setMessage("Your Etsy connection has been verified.");
+      onPilotRef.current?.(data.pilot || null);
       setShopName("");
       return requestEtsy("/api/etsy/shop", { signal: controller.signal }).then(shop => {
         if (!controller.signal.aborted && typeof shop.shopName === "string") setShopName(shop.shopName);
@@ -56,6 +59,7 @@ export default function EtsyConnection({ returnStatus, onImport }) {
     }).catch((error) => {
       if (controller.signal.aborted && controller.signal.reason !== "timeout") return;
       if (["ETSY_BROWSER_SESSION_REQUIRED", "ETSY_CONNECTION_NOT_FOUND", "ETSY_REAUTHORIZATION_REQUIRED"].includes(error.code)) {
+        onPilotRef.current?.(null);
         setStatus("disconnected");
         setMessage(returnStatus === "connected"
           ? "The connection could not be verified in this browser. Please reconnect."

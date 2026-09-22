@@ -2,6 +2,7 @@ import { useState } from "react";
 import TaskOutcomeForm from "./TaskOutcomeForm";
 import EtsyMissingEvidence from "./EtsyMissingEvidence";
 import EtsyConnection from "./EtsyConnection";
+import PilotListingReview from "./PilotListingReview";
 import { defaultReportingPeriod, normalizeReportingPeriod, todayInTimeZone, shiftDate, PERIOD_ERRORS } from "../../../shared/reportingPeriod.js";
 
 function createEmptyListing() {
@@ -117,6 +118,8 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
   const [reportingPeriod, setReportingPeriod] = useState(() => defaultReportingPeriod());
   const [etsyPeriodConfirmed, setEtsyPeriodConfirmed] = useState(false);
   const [shopName, setShopName] = useState("");
+  const [pilot, setPilot] = useState(null);
+  const [pilotDraftVersion, setPilotDraftVersion] = useState(0);
   const [catalogImported, setCatalogImported] = useState(false);
 
   const [weeklyAvailableMinutes, setWeeklyAvailableMinutes] = useState("180");
@@ -231,6 +234,7 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
     ));
     if (hasExistingData && !window.confirm("Replace the current shop form and displayed plan with your Etsy listings? Views and sales will need to be entered again.")) return false;
     setShopName(draft.shopName);
+    setPilotDraftVersion(value => value + 1);
     setListings(draft.listings);
     setCatalogImported(true);
     setDataSourceMode("MANUAL");
@@ -1436,7 +1440,10 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
         </div>
 
         <div className="space-y-4">
-          <EtsyConnection returnStatus={etsyReturnStatus} onImport={handleCatalogImport} />
+          <EtsyConnection returnStatus={etsyReturnStatus} onImport={handleCatalogImport} onPilotChange={setPilot} />
+          {pilot?.enabled && <p role="status" className="rounded-xl bg-indigo-50 p-4 text-sm text-indigo-900">
+            {!pilot.approved ? `Your Etsy connection works. This pilot is invitation-only; ask Lighthouse to approve account reference ${pilot.etsyUserId}.` : !pilot.ready ? "Your pilot access is approved. The review service is being prepared." : "Your private pilot access is ready. Add real product data below to prepare an improvement draft."}
+          </p>}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
               Data source
@@ -1868,6 +1875,13 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
             ))}
         </div>
       </div>
+
+      {pilot?.enabled && pilot.approved && pilot.ready && <PilotListingReview
+        key={`${pilot.etsyUserId}:${dataSourceMode}:${pilotDraftVersion}`}
+        listings={dataSourceMode === "MANUAL" ? buildRequestListings() : []}
+        reportingPeriod={reportingPeriod}
+        suggestedListingId={plan?.tasks?.find(task => task.listingId)?.listingId}
+      />}
 
       {dataSourceMode === "ETSY" && (
         <EtsyMissingEvidence

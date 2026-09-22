@@ -82,6 +82,7 @@ router.post("/plan", (req, res) => {
     const storedPlan = createStoredShopPlan({
       shopData: normalizedShopData,
       executionPlan: plan,
+      pilotOwnerId: req.pilotIdentity?.etsyUserId,
     });
 
     if (!storedPlan.valid) {
@@ -120,7 +121,8 @@ router.post("/execute", async (req, res) => {
       });
     }
 
-    const state = shopPlans.get(shopPlanId);
+    const candidate = shopPlans.get(shopPlanId);
+    const state = !req.pilotIdentity || candidate?.pilotOwnerId === req.pilotIdentity.etsyUserId ? candidate : null;
 
     if (!state) {
       return res.status(404).json({
@@ -199,7 +201,8 @@ router.post("/approval", (req, res) => {
       });
     }
 
-    const state = shopPlans.get(shopPlanId);
+    const candidate = shopPlans.get(shopPlanId);
+    const state = !req.pilotIdentity || candidate?.pilotOwnerId === req.pilotIdentity.etsyUserId ? candidate : null;
 
     if (!state) {
       return res.status(404).json({
@@ -285,7 +288,8 @@ router.post("/outcome", (req, res) => {
       });
     }
 
-    const state = shopPlans.get(shopPlanId);
+    const candidate = shopPlans.get(shopPlanId);
+    const state = !req.pilotIdentity || candidate?.pilotOwnerId === req.pilotIdentity.etsyUserId ? candidate : null;
 
     if (!state) {
       return res.status(404).json({
@@ -372,6 +376,7 @@ router.post("/etsy/plan", (req, res) => {
     const storedPlan = createStoredShopPlan({
       shopData: result.shopData,
       executionPlan: result.plan,
+      pilotOwnerId: req.pilotIdentity?.etsyUserId,
     });
 
     if (!storedPlan.valid) {

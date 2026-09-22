@@ -11,7 +11,7 @@ try {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    for (const file of ["001_etsy_connections.sql", "002_etsy_connection_owners.sql"]) {
+    for (const file of ["001_etsy_connections.sql", "002_etsy_connection_owners.sql", "003_private_pilot.sql"]) {
       const sql = await readFile(new URL("../migrations/" + file, import.meta.url), "utf8");
       await client.query(sql);
     }

@@ -11,6 +11,7 @@ export function createEtsyReadRouter({
   getUser = getEtsyUser,
   getShopCatalog = getEtsyShopCatalog,
   getConnectionByOwnerSessionHash = getEtsyConnectionByOwnerSessionHash,
+  pilotAccess,
 } = {}) {
   const router = express.Router();
   router.use((_req, res, next) => {
@@ -46,7 +47,7 @@ export function createEtsyReadRouter({
     return false;
   }
 
-  router.get(["/shop/catalog", "/shop"], async (req, res) => {
+  router.get(["/shop/catalog", "/shop"], ...(pilotAccess ? [pilotAccess.requireAccess] : []), async (req, res) => {
     try {
       const connection = await requireOwnedConnection(req);
       const catalog = await getShopCatalog({
@@ -91,6 +92,7 @@ export function createEtsyReadRouter({
       return res.json({
         connected: true,
         user,
+        ...(pilotAccess ? { pilot: pilotAccess.describe(connection, req, res) } : {}),
       });
     } catch (error) {
       if (handleOwnershipError(error, res)) return;
@@ -149,7 +151,7 @@ export function createEtsyReadRouter({
 
   // *Read the connected Etsy user profile by stored Etsy user ID*
 
-  router.get("/user", async (req, res) => {
+  router.get("/user", ...(pilotAccess ? [pilotAccess.requireAccess] : []), async (req, res) => {
     try {
       const connection = await requireOwnedConnection(req);
 

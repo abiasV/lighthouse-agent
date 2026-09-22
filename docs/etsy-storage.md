@@ -198,10 +198,97 @@ the optional PostgreSQL integration test needs a dedicated local test database.
   and disconnect UI. A populated second shop import remains unverified.
 - Keep switch guidance visible after Retry check; the Etsy account-menu link
   deliberately opens a separate tab and does not log out the user automatically.
-- Before inviting sellers to connect, confirm Etsy commercial-access eligibility
-  (personal access is limited to five shops) and implement server-enforced private
-  access bound to verified identity. A shareable invitation URL is not sufficient.
-- Existing betaAccessGuard covers real opportunity execution only, and its usage
-  counters are in memory. It is not a site-wide access gate or durable cost cap.
-- The import pilot should keep paid AI disabled, enforce access on the direct
-  backend as well as the UI, and test denial/revocation before sending access links.
+- Personal access is limited-scale use subject to Etsy approval. Confirm this
+  app's actual shop allowance with Etsy rather than assuming that five new sellers
+  plus the owner's account are permitted. Our private pilot independently caps
+  its approved account list at five.
+- Pilot code is prepared behind `LIGHTHOUSE_PRIVATE_PILOT`; it has NOT been
+  activated or tested with a paid provider or a populated live seller shop.
+- No new invitations should be sent until the activation gates below pass.
+
+## Private seller review pilot
+
+Approved owner budget: C$30 total for pilot AI, not per seller or per month.
+The pilot offers an evidence-based draft review for one product, draft title and
+description, one action to test, and a saved follow-up with a later equal-length
+reporting period. This is separate from the existing deterministic Weekly Planner;
+its scoring thresholds and mock execution/approval packages are unchanged.
+AI suggestions are hypotheses/drafts, not verified market research or sales promises.
+Imported data currently includes only shop name and active listing titles. Sellers
+must supply period views/sales and accurate product details. Buyer data is not requested.
+
+### Access and spending boundaries
+
+- When `LIGHTHOUSE_PRIVATE_PILOT=true`, `/api/shop` and Etsy catalog/profile reads
+  require an active browser-owned Etsy connection whose stored numeric Etsy user ID
+  is allowlisted. Client-supplied user IDs and invitation links do not grant access.
+  Health, landing pages, OAuth, and `/api/etsy/me` remain available for sign-in.
+- `/me` issues an additional HttpOnly, Secure, SameSite=Lax cookie scoped to `/api`
+  only for approved accounts. Every protected request resolves the current stored
+  connection again, so disconnect or removal from the allowlist revokes access.
+  Pilot shop plans are also bound to their owner; another invited account cannot
+  execute, approve or record outcomes against their IDs.
+- All `/api/analysis` routes are disabled in private-pilot mode, regardless of
+  legacy real-AI flags. The old in-memory beta counter is NOT the pilot budget.
+- Migration `003_private_pilot.sql` adds a singleton C$30 allowance and encrypted
+  review records. A transaction locks the budget row before reserving C$1 per
+  unique submission, at most six attempts per account and 30 in total. The budget
+  does not reset on restart, deploy, reconnect or rerunning migrations.
+- Request keys are unique per verified Etsy user. Identical retries return the
+  existing record; a key reused with changed data is rejected. Failed/ambiguous
+  provider requests retain their reservation. An interrupted pending record is
+  never automatically sent to the provider again. Saved results remain readable
+  after the allowance is exhausted.
+- One text-only OpenAI request uses `gpt-4.1-mini-2025-04-14`, at most 16,000 UTF-8
+  input bytes plus fixed instructions and 2,200 output tokens; no tools, retries
+  or background work. Provider response storage is disabled. Reviews are encrypted
+  in our database using the existing server encryption key and a separate record
+  namespace. Do not rotate that key without migrating existing encrypted records.
+- C$1 is a conservative reservation, not a provider invoice measurement. At the
+  official 2026-09-22 prices (US$0.40/1M input, US$1.60/1M output), the bounded call
+  is below US$0.02. The large reserve leaves currency/tax headroom. Recheck pricing
+  before activation. Use a separate OpenAI project/key; this code cannot cap other
+  applications using the key, account top-ups, or hosting costs. No paid hosting
+  service is authorized by this AI budget.
+
+### Activation gates and settings
+
+1. Obtain Etsy's written approval for this exact analytics/AI-assisted use case,
+   including sending selected seller content to OpenAI for inference. Etsy's API
+   Terms updated 2026-08-18, section 5 items 24–25, require written authorization
+   for the stated automated/analytics uses. Generic OAuth consent or Commercial
+   status alone is not evidence that every proposed use is approved.
+   Official sources: https://www.etsy.com/legal/api/ and
+   https://developers.etsy.com/documentation/ .
+2. Publish accurate pilot terms, privacy/retention/deletion details, monitored
+   support contact and Etsy attribution, and implement terms acceptance. These are
+   still pending; do not invite sellers or enable AI before they are complete.
+3. Run the PostgreSQL test against a dedicated LOCAL database, never production:
+   `ETSY_TEST_DATABASE_URL=postgresql://.../lighthouse_test node --test tests/pilotPostgres.integration.test.js`
+   It covers cross-client races, deduplication, both caps, persistence, encrypted
+   records and owner isolation. The test is skipped if no local test DB is supplied.
+4. Run `npm run db:migrate:etsy` with the existing server-side database settings.
+   It is additive/idempotent and does not clear the budget. Do not delete ledger
+   rows or reset the singleton to reclaim failed requests.
+5. In Render only, configure `LIGHTHOUSE_PRIVATE_PILOT=true`,
+   `LIGHTHOUSE_PILOT_ETSY_USER_IDS` as at most five comma-separated numeric Etsy
+   user IDs (not emails, names or shop IDs), and a dedicated `OPENAI_API_KEY`.
+   Empty allowlist denies everyone. Keep the existing PostgreSQL, encryption and
+   Netlify callback settings. Set `LIGHTHOUSE_ETSY_REVIEW_APPROVED=true` only after
+   written approval and the preceding gates are complete. Missing configuration
+   or schema closes private functionality; it never falls back to memory storage.
+6. Test on deployed Netlify with the owner's approved account: Weekly Growth Plan
+   → Connect Etsy → Enter manually. Use a product you own, its actual reporting
+   period/views/sales, then enter factual details and the problem in Private seller
+   pilot → Prepare my improvement draft. Check the output before copying it, reload
+   and retrieve the saved review. Verify an uninvited account is denied; disconnect
+   must revoke both review and planner access. A populated shop import, real provider
+   output quality and these live checks remain unverified.
+7. Only then contact the selected prospects for a useful assisted review, invite
+   at most five approved identities, and track actual seller outcomes. Outreach
+   drafts are not proof that any invitation was sent or any recipient consented.
+
+Local sample/manual development is unchanged while the feature flag is absent.
+Real Etsy OAuth remains hosted-only. To close all private functionality without
+reopening legacy routes, keep the private-pilot flag true and empty the allowlist;
+setting it false restores the legacy public behavior.

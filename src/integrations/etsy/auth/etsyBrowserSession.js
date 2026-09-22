@@ -15,14 +15,14 @@ export function createEtsyBrowserSession() {
   return { token, ownerSessionHash: hashEtsyBrowserSession(token) };
 }
 
-export function readEtsyBrowserSession(req) {
+export function readEtsyBrowserSession(req, { cookieName = ETSY_BROWSER_SESSION_COOKIE } = {}) {
   const header = req.headers.cookie;
   if (typeof header !== "string") return null;
   for (const item of header.split(";")) {
     const separator = item.indexOf("=");
     if (separator < 0) continue;
     const name = item.slice(0, separator).trim();
-    if (name !== ETSY_BROWSER_SESSION_COOKIE) continue;
+    if (name !== cookieName) continue;
     const token = item.slice(separator + 1).trim();
     try {
       return { token, ownerSessionHash: hashEtsyBrowserSession(token) };
@@ -33,11 +33,13 @@ export function readEtsyBrowserSession(req) {
   return null;
 }
 
-export function serializeEtsyBrowserSessionCookie(token, { secure = true } = {}) {
+export function serializeEtsyBrowserSessionCookie(token, {
+  secure = true, cookieName = ETSY_BROWSER_SESSION_COOKIE, path = "/api/etsy",
+} = {}) {
   hashEtsyBrowserSession(token);
   return [
-    `${ETSY_BROWSER_SESSION_COOKIE}=${token}`,
-    "Path=/api/etsy",
+    `${cookieName}=${token}`,
+    `Path=${path}`,
     "HttpOnly",
     "SameSite=Lax",
     `Max-Age=${ETSY_BROWSER_SESSION_MAX_AGE_SECONDS}`,

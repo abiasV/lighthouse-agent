@@ -64,7 +64,7 @@ export async function configureEtsyConnectionStorage({
     );
     if (rows.length) cipher.decrypt(rows[0].connection_id, rows[0].payload);
     setEtsyConnectionRepository(createPostgresEtsyConnectionRepository({ pool, cipher }));
-    return { enabled: true, ready: true, mode, close: () => pool.end() };
+    return { enabled: true, ready: true, mode, pool, close: () => pool.end() };
   } catch {
     await pool.end();
     throw new Error("ETSY_STORAGE_INITIALIZATION_FAILED");

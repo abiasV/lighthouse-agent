@@ -4,7 +4,11 @@ import "dotenv/config";
 import analysisRoutes from "./src/routes/analysisRoutes.js";
 import shopRoutes from "./src/routes/shopRoutes.js";
 import etsyAuthRoutes from "./src/routes/etsyAuthRoutes.js";
-import etsyReadRoutes from "./src/routes/etsyReadRoutes.js";
+import { createEtsyReadRouter } from "./src/routes/etsyReadRoutes.js";
+import { createPilotAccess, isPrivatePilot, pilotUserIds } from "./src/pilot/pilotAccess.js";
+import { createPilotReviewStore } from "./src/pilot/pilotReviewStore.js";
+import { createEtsyTokenCipher } from "./src/integrations/etsy/auth/etsyTokenCipher.js";
+import { createPilotRouter } from "./src/routes/pilotRoutes.js";
 import {
   configureEtsyConnectionStorage,
   requireEtsyConnectionStorage,
@@ -19,6 +23,21 @@ try {
   etsyStorage = { enabled: false, close: async () => {} };
 }
 
+let pilotStore;
+if (isPrivatePilot()) {
+  try {
+    pilotUserIds();
+    if (!etsyStorage.pool || !process.env.OPENAI_API_KEY?.trim() ||
+        process.env.LIGHTHOUSE_ETSY_REVIEW_APPROVED !== "true") throw new Error();
+    const candidate = createPilotReviewStore({ pool: etsyStorage.pool,
+      cipher: createEtsyTokenCipher(process.env.ETSY_TOKEN_ENCRYPTION_KEY) });
+    await candidate.check();
+    pilotStore = candidate;
+  } catch {
+    console.error("Private pilot is not ready; private functionality is blocked.");
+  }
+}
+const pilotAccess = createPilotAccess({ ready: () => Boolean(pilotStore) });
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -36,11 +55,16 @@ app.get("/api/health", (req, res) => {
 
 // Opportunity analysis workflow
 
-app.use("/api/analysis", analysisRoutes);
+// Legacy opportunity AI has different cost controls. It is unavailable during
+// the bounded seller pilot, even when USE_REAL_EXECUTION_AI is accidentally on.
+app.use("/api/analysis", (_req, res, next) => {
+  if (isPrivatePilot()) return res.status(403).json({ error: "PILOT_SHOP_WORKFLOW_ONLY", message: "Use the private listing review in Weekly Growth Plan during this pilot." });
+  return next();
+}, analysisRoutes);
 
 // Etsy shop planning and execution workflow
 
-app.use("/api/shop", shopRoutes);
+app.use("/api/shop", pilotAccess.requireAccess, shopRoutes);
 
 // *Etsy OAuth workflow*
 
@@ -50,7 +74,8 @@ app.use("/api/etsy/auth", etsyAuthRoutes);
 
 // *Etsy read workflow*
 
-app.use("/api/etsy", etsyReadRoutes);
+app.use("/api/etsy", createEtsyReadRouter({ pilotAccess }));
+app.use("/api/etsy/pilot", createPilotRouter({ store: pilotStore, access: pilotAccess }));
 
 const server = app.listen(PORT, () => {
   console.log(`Lighthouse API server is running on port ${PORT}`);
