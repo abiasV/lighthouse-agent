@@ -20,10 +20,12 @@
   to another browser requires reconnecting Etsy. Ownership also expires server-side
   30 days after authorization. Account-based ownership can replace
   the cookie hash later without changing the encrypted token storage.
-- Next: verify the deployed health and Etsy storage guard, then complete the
-  production-origin OAuth and restart-persistence checks before wiring real import.
-  Direct API verification from the cloud browser was blocked by the client; no
-  successful endpoint check is claimed.
+- Deployment verification: on 2026-09-22, the public health endpoint returned
+  HTTP 200 with the expected service response. The Etsy read route returned the
+  expected HTTP 401 `ETSY_BROWSER_SESSION_REQUIRED` without a browser session,
+  confirming that the deployed storage gate and session guard are active.
+- Next: complete the production-origin OAuth and restart-persistence checks before
+  wiring real Etsy import into the planner.
 - OAuth state/PKCE sessions are still in memory. An authorization attempt interrupted
   by a restart must be restarted. Established connections use PostgreSQL when configured.
 - Tests cover browser ownership, encryption, tamper rejection, concurrency, rollback
@@ -118,8 +120,9 @@ are made by storage or its tests.
   database network access to the backend's outbound addresses and any migration client.
   Do not disable certificate verification to make the internal URL connect.
   Reference: https://render.com/docs/postgresql-creating-connecting
-- Before real seller onboarding: run the real-Postgres integration test, verify
-  persistence after restart, and test an Etsy authorization end-to-end through the
-  production site's proxy. These have not been validated against a hosted database.
+- Before real seller onboarding: verify encrypted connection persistence after a
+  backend restart and test Etsy authorization end-to-end through the production
+  site's proxy. Migration and startup have been validated against hosted PostgreSQL;
+  an actual Etsy token round trip has not.
 - Browser ownership is an MVP connection boundary, not a Lighthouse account system.
   OAuth state remains process-local: use one backend instance until it is persistent.
