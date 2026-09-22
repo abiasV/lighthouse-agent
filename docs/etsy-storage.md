@@ -5,7 +5,14 @@
 - Implemented: encrypted PostgreSQL connection records, asynchronous OAuth/token
   reads and writes, refresh locking across server instances, verified database TLS,
   and safe handling of missing or invalid configuration.
-- Not activated: no hosted database or production encryption key has been created.
+- Hosted test setup: Render PostgreSQL and backend secret settings are configured.
+  Verified-TLS schema migration succeeded and backend commit 30d9aaf was Live on
+  2026-09-21. This does not yet verify an actual Etsy token round trip.
+- The free test database expires on 2026-10-20. Arrange migration or an explicitly
+  approved hosting plan before expiry; no paid upgrade has been authorized.
+- Render Start Command is `npm run db:migrate:etsy && node server.js`, so the
+  idempotent migrations run before startup. Separate runtime/migration roles and
+  a backup policy remain onboarding work.
 - Browser ownership is implemented with a random HttpOnly cookie. OAuth state is
   bound to that browser, connection IDs are not exposed, and read routes resolve
   only the connection owned by the cookie.
@@ -13,7 +20,10 @@
   to another browser requires reconnecting Etsy. Ownership also expires server-side
   30 days after authorization. Account-based ownership can replace
   the cookie hash later without changing the encrypted token storage.
-- Next: configure a hosted database, then wire the real Etsy import into the planner.
+- Next: verify the deployed health and Etsy storage guard, then complete the
+  production-origin OAuth and restart-persistence checks before wiring real import.
+  Direct API verification from the cloud browser was blocked by the client; no
+  successful endpoint check is claimed.
 - OAuth state/PKCE sessions are still in memory. An authorization attempt interrupted
   by a restart must be restarted. Established connections use PostgreSQL when configured.
 - Tests cover browser ownership, encryption, tamper rejection, concurrency, rollback
