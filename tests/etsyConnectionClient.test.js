@@ -3,10 +3,20 @@ import assert from "node:assert/strict";
 import {
   requestEtsy,
   requestEtsyWithRetry,
+  isLocalEtsyDevelopmentOrigin,
   validateEtsyAuthorizationUrl,
 } from "../client/src/utils/etsyConnection.js";
 
 const origin = "https://lighthouse-agent-app.netlify.app";
+
+test("client identifies only loopback hosts as local Etsy development", () => {
+  for (const hostname of ["localhost", "127.0.0.1", "::1"]) {
+    assert.equal(isLocalEtsyDevelopmentOrigin({ hostname }), true);
+  }
+  for (const hostname of ["lighthouse-agent-app.netlify.app", "localhost.example.com"]) {
+    assert.equal(isLocalEtsyDevelopmentOrigin({ hostname }), false);
+  }
+});
 function authUrl(callback = `${origin}/api/etsy/auth/callback`) {
   const url = new URL("https://www.etsy.com/oauth/connect");
   url.searchParams.set("redirect_uri", callback);

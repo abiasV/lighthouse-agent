@@ -4,6 +4,10 @@ export const ETSY_RETURN_MESSAGES = {
   failed: "The Etsy connection could not be completed. Please try connecting again.",
 };
 
+export function isLocalEtsyDevelopmentOrigin(location) {
+  return ["localhost", "127.0.0.1", "::1"].includes(location?.hostname);
+}
+
 export function validateEtsyAuthorizationUrl(value, origin) {
   const url = new URL(value);
   const callback = new URL(url.searchParams.get("redirect_uri"));

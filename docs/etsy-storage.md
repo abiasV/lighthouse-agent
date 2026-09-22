@@ -36,8 +36,9 @@
   /api/etsy/me verified the authenticated connection. Etsy did not display a new
   consent screen, which is consistent with an authorization already granted to
   this Etsy app/account.
-- Next: verify token persistence after a backend restart, then wire real Etsy
-  import into the planner.
+- Token persistence was verified after a backend redeploy on 2026-09-22: storage
+  initialized successfully and the same production browser session remained connected.
+- Next: wire real Etsy import into the planner.
 - OAuth state/PKCE sessions are still in memory. An authorization attempt interrupted
   by a restart must be restarted. Established connections use PostgreSQL when configured.
 - Tests cover browser ownership, encryption, tamper rejection, concurrency, rollback
@@ -132,9 +133,9 @@ are made by storage or its tests.
   database network access to the backend's outbound addresses and any migration client.
   Do not disable certificate verification to make the internal URL connect.
   Reference: https://render.com/docs/postgresql-creating-connecting
-- Before real seller onboarding: verify encrypted connection persistence after a
-  backend restart. Production-origin OAuth through the Netlify proxy and the hosted
-  PostgreSQL token round trip have been validated.
+- Production-origin OAuth through the Netlify proxy, the hosted PostgreSQL token
+  round trip, and encrypted connection persistence after a backend restart have
+  been validated.
 - Browser ownership is an MVP connection boundary, not a Lighthouse account system.
   OAuth state remains process-local: use one backend instance until it is persistent.
 
@@ -148,9 +149,11 @@ https://lighthouse-agent-app.netlify.app/api/etsy/auth/callback
 
 The existing Netlify /api proxy forwards both authorization and callback requests.
 Do not use the Render origin, localhost, or a deploy-preview origin for this test.
-The callback was verified in both Render and the Etsy app on 2026-09-22. Localhost
-is expected to report the connection as unavailable unless its backend and a
-separate registered local callback are explicitly configured.
+The callback was verified in both Render and the Etsy app on 2026-09-22. Live Etsy
+OAuth is intentionally production-only: Etsy requires an exact registered HTTPS
+callback, while local Vite uses an HTTP loopback origin and a separate backend.
+The local UI therefore directs development to sample/manual data instead of
+starting or polling a production-owned Etsy connection.
 
 The production test completed successfully on 2026-09-22: Connect Etsy returned to
 the planner and displayed "Your Etsy connection has been verified." Cancelled,
@@ -158,8 +161,8 @@ expired and failed attempts show a retry message without claiming success. Check
 connection reads /api/etsy/me.
 Never send screenshots containing OAuth codes, cookies or tokens.
 
-For persistence verification, keep that browser's cookies, restart the backend, then
-use Check connection again. This hosted OAuth/restart test is still outstanding.
+Persistence verification completed after a backend redeploy while retaining the
+same production browser cookie; Check connection still verified the Etsy account.
 
 Implementation verification: 28 focused OAuth, ownership/read and client request tests
 passed; client lint and production build passed. These tests use mocked Etsy responses,

@@ -1,18 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ETSY_RETURN_MESSAGES,
+  isLocalEtsyDevelopmentOrigin,
   requestEtsy,
   requestEtsyWithRetry,
   validateEtsyAuthorizationUrl,
 } from "../utils/etsyConnection.js";
 
 export default function EtsyConnection({ returnStatus }) {
-  const [status, setStatus] = useState(ETSY_RETURN_MESSAGES[returnStatus] ? "error" : "checking");
-  const [message, setMessage] = useState(ETSY_RETURN_MESSAGES[returnStatus] || "");
+  const localDevelopment = isLocalEtsyDevelopmentOrigin(window.location);
+  const [status, setStatus] = useState(localDevelopment
+    ? "local-development"
+    : ETSY_RETURN_MESSAGES[returnStatus] ? "error" : "checking");
+  const [message, setMessage] = useState(localDevelopment
+    ? "Real Etsy connection is available on the deployed Lighthouse site. Use sample or manual data during local development."
+    : ETSY_RETURN_MESSAGES[returnStatus] || "");
   const [attempt, setAttempt] = useState(0);
   const activeRequest = useRef(null);
 
   useEffect(() => {
+    if (localDevelopment) return;
     if (ETSY_RETURN_MESSAGES[returnStatus] && attempt === 0) return;
     const controller = new AbortController();
     activeRequest.current = controller;
@@ -43,7 +50,7 @@ export default function EtsyConnection({ returnStatus }) {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [attempt, returnStatus]);
+  }, [attempt, localDevelopment, returnStatus]);
 
   useEffect(() => () => activeRequest.current?.abort(), []);
 
@@ -87,19 +94,21 @@ export default function EtsyConnection({ returnStatus }) {
           : status === "connecting" ? "Opening Etsy…" : message}
       </p>
       <div className="mt-3 flex flex-wrap gap-3">
-        {status !== "connected" && (
+        {!localDevelopment && status !== "connected" && (
           <button type="button" disabled={busy} onClick={connect}
             className="rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
             {status === "connecting" ? "Opening Etsy…" : "Connect Etsy"}
           </button>
         )}
-        <button type="button" disabled={busy} onClick={() => {
-          setStatus("checking");
-          setMessage("");
-          setAttempt((value) => value + 1);
-        }} className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200">
-          {status === "connected" ? "Check connection" : "Retry check"}
-        </button>
+        {!localDevelopment && (
+          <button type="button" disabled={busy} onClick={() => {
+            setStatus("checking");
+            setMessage("");
+            setAttempt((value) => value + 1);
+          }} className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200">
+            {status === "connected" ? "Check connection" : "Retry check"}
+          </button>
+        )}
       </div>
     </div>
   );
