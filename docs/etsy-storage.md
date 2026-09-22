@@ -288,6 +288,25 @@ must supply period views/sales and accurate product details. Buyer data is not r
    at most five approved identities, and track actual seller outcomes. Outreach
    drafts are not proof that any invitation was sent or any recipient consented.
 
+### Outreach promise and draft review
+
+- Before sending, reread and rewrite the existing draft subjects and bodies around
+  a concrete benefit for each seller, not a request to test our import or help us
+  build our product. Offer a useful review of one relevant listing, ready-to-check
+  copy improvements and one measurable action only after we have verified that
+  the actual workflow can deliver those outputs.
+- Be transparent that this is an early, free, limited pilot. Our benefit is learning
+  from real use; the seller must receive useful work in return. Do not disguise
+  pilot status, promise to fix sales, guarantee increased revenue or imply that
+  generated suggestions are proven results. No claim of a seller-specific problem
+  without evidence, and no invented personalization.
+- Keep the initial invitation short and make replying the first step. Explain
+  the required effort and data access before onboarding. Do not make a lengthy
+  survey or feedback obligation the price of receiving the promised deliverable.
+- Review all ten existing drafts against these criteria at the outreach gate;
+  they have not yet been rewritten or sent. Send only after readiness and recipient
+  checks, then select up to five interested, eligible sellers for approved access.
+
 Local sample/manual development is unchanged while the feature flag is absent.
 Real Etsy OAuth remains hosted-only. To close all private functionality without
 reopening legacy routes, keep the private-pilot flag true and empty the allowlist;
