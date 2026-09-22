@@ -76,6 +76,18 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
   // Complete an Etsy OAuth authorization request
 
   router.get("/callback", async (req, res) => {
+    // Browser navigation returns to a fixed local page; API clients keep JSON.
+    const reply = (status, body) => {
+      if (req.accepts(["json", "html"]) === "html") {
+        const outcome = body.connected ? "connected"
+          : body.error === "ETSY_AUTHORIZATION_DENIED" ? "denied"
+          : ["ETSY_BROWSER_SESSION_REQUIRED", "INVALID_OR_EXPIRED_ETSY_OAUTH_STATE",
+              "ETSY_OAUTH_BROWSER_SESSION_MISMATCH"].includes(body.error) ? "expired"
+          : "failed";
+        return res.redirect(303, `/?etsy=${outcome}`);
+      }
+      return res.status(status).json(body);
+    };
     try {
       const {
         code,
@@ -87,7 +99,7 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
       const browserSession = readEtsyBrowserSession(req);
       if (error) {
         if (!browserSession) {
-          return res.status(401).json({ error: "ETSY_BROWSER_SESSION_REQUIRED" });
+          return reply(401, { error: "ETSY_BROWSER_SESSION_REQUIRED" });
         }
         if (typeof state !== "string" || !state.trim()) {
           throw new Error("ETSY_OAUTH_STATE_REQUIRED");
@@ -96,7 +108,7 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
           ownerSessionHash: browserSession.ownerSessionHash,
         })) throw new Error("INVALID_OR_EXPIRED_ETSY_OAUTH_STATE");
 
-        return res.status(400).json({
+        return reply(400, {
           error: "ETSY_AUTHORIZATION_DENIED",
           message:
             typeof errorDescription === "string"
@@ -112,7 +124,7 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
         code.trim() &&
         !browserSession
       ) {
-        return res.status(401).json({
+        return reply(401, {
           error: "ETSY_BROWSER_SESSION_REQUIRED",
           message: "Return to Lighthouse and start the Etsy connection again.",
         });
@@ -127,7 +139,7 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
       });
 
       res.set("Cache-Control", "no-store");
-      return res.json({
+      return reply(200, {
         connected: true,
         connection: result.connection,
       });
@@ -149,16 +161,15 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
       };
 
       if (clientErrors[error.message]) {
-        return res.status(
-          error.message === "ETSY_OAUTH_BROWSER_SESSION_MISMATCH" ? 401 : 400,
-        ).json({
+        return reply(
+          error.message === "ETSY_OAUTH_BROWSER_SESSION_MISMATCH" ? 401 : 400, {
           error: error.message,
           message: clientErrors[error.message],
         });
       }
 
       if (error.message === "ETSY_TOKEN_EXCHANGE_FAILED") {
-        return res.status(502).json({
+        return reply(502, {
           error: error.message,
           message: "Etsy did not accept the token exchange.",
         });
@@ -168,14 +179,14 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
         error.message === "INVALID_ETSY_TOKEN_RESPONSE" ||
         error.message === "INVALID_ETSY_ACCESS_TOKEN"
       ) {
-        return res.status(502).json({
+        return reply(502, {
           error: error.message,
           message: "Etsy returned an invalid token response.",
         });
       }
 
       if (error.message === "ETSY_CLIENT_ID_REQUIRED") {
-        return res.status(503).json({
+        return reply(503, {
           error: error.message,
           message: "Etsy OAuth client ID is not configured.",
         });
@@ -183,7 +194,7 @@ export function createEtsyAuthRouter({ exchangeAuthorizationCode } = {}) {
 
       console.error("ETSY_AUTH_REQUEST_FAILED");
 
-      return res.status(500).json({
+      return reply(500, {
         error: "ETSY_AUTH_CALLBACK_FAILED",
         message: "Lighthouse could not complete Etsy authorization.",
       });

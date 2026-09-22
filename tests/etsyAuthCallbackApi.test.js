@@ -342,3 +342,60 @@ test("a denied callback from another browser cannot cancel the owner's authoriza
   assert.equal((await owner.json()).error, "ETSY_AUTHORIZATION_DENIED");
   assert.equal(getEtsyAuthSessionCount(), 0);
 });
+
+test("browser callback returns to Lighthouse without credentials and rejects replay", async () => {
+  createEtsyAuthSession({
+    ownerSessionHash,
+    state: "browser_return_state",
+    codeVerifier: "browser_verifier",
+    redirectUri: "https://example.com/api/etsy/auth/callback",
+    scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
+  });
+  await startTestServer({ exchangeAuthorizationCode: async () => ({
+    accessToken: "12345678.secret_access",
+    refreshToken: "12345678.secret_refresh",
+    tokenType: "Bearer",
+    expiresInSeconds: 3600,
+    scopes: ["shops_r", "listings_r", "transactions_r", "email_r"],
+  }) });
+  const options = { headers: { ...browserHeaders, Accept: "text/html,application/xhtml+xml" }, redirect: "manual" };
+  const url = `${baseUrl}/api/etsy/auth/callback?state=browser_return_state&code=secret_code&returnTo=https://evil.example`;
+  const response = await fetch(url, options);
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get("location"), "/?etsy=connected");
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+  assert.doesNotMatch(await response.text(), /secret_|browser_return_state/);
+  assert.equal(getEtsyConnectionCount(), 1);
+  const replay = await fetch(url, options);
+  assert.equal(replay.headers.get("location"), "/?etsy=expired");
+});
+
+test("browser denial and missing cookies return safe fixed outcomes", async () => {
+  createEtsyAuthSession({ ownerSessionHash, state: "browser_denied", codeVerifier: "verifier",
+    redirectUri: "https://example.com/api/etsy/auth/callback", scopes: ["shops_r"] });
+  await startTestServer();
+  const denied = await fetch(`${baseUrl}/api/etsy/auth/callback?state=browser_denied&error=access_denied&error_description=untrusted`, {
+    headers: { ...browserHeaders, Accept: "text/html" }, redirect: "manual",
+  });
+  assert.equal(denied.status, 303);
+  assert.equal(denied.headers.get("location"), "/?etsy=denied");
+  assert.doesNotMatch(await denied.text(), /untrusted/);
+  const missing = await fetch(`${baseUrl}/api/etsy/auth/callback?state=s&code=c`, {
+    headers: { Accept: "text/html" }, redirect: "manual",
+  });
+  assert.equal(missing.headers.get("location"), "/?etsy=expired");
+  assert.equal(getEtsyConnectionCount(), 0);
+});
+
+test("browser token exchange failure never reports a connection", async () => {
+  createEtsyAuthSession({ ownerSessionHash, state: "browser_failed", codeVerifier: "verifier",
+    redirectUri: "https://example.com/api/etsy/auth/callback", scopes: ["shops_r"] });
+  await startTestServer({ exchangeAuthorizationCode: async () => { throw new Error("ETSY_TOKEN_EXCHANGE_FAILED"); } });
+  const response = await fetch(`${baseUrl}/api/etsy/auth/callback?state=browser_failed&code=c`, {
+    headers: { ...browserHeaders, Accept: "text/html" }, redirect: "manual",
+  });
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get("location"), "/?etsy=failed");
+  assert.equal(getEtsyConnectionCount(), 0);
+});

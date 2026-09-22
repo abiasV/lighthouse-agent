@@ -7,7 +7,18 @@ function App() {
     return localStorage.getItem("theme") || "light";
   });
 
-  const [view, setView] = useState("landing");
+  const [etsyReturnStatus] = useState(() => {
+    const status = new URLSearchParams(window.location.search).get("etsy");
+    return ["connected", "denied", "expired", "failed"].includes(status) ? status : null;
+  });
+  const [view, setView] = useState(() => etsyReturnStatus ? "shopPlan" : "landing");
+
+  useEffect(() => {
+    if (!etsyReturnStatus) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("etsy");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, [etsyReturnStatus]);
 
   const [idea, setIdea] = useState("");
   const [analysis, setAnalysis] = useState(null);
@@ -1188,7 +1199,7 @@ function App() {
         </header>
 
         {!analysis && view === "shopPlan" && (
-          <ShopWeeklyPlan onBack={handleBackToLanding} />
+          <ShopWeeklyPlan onBack={handleBackToLanding} etsyReturnStatus={etsyReturnStatus} />
         )}
 
         {!analysis && view === "landing" && (
@@ -1916,3 +1927,4 @@ function App() {
 }
 
 export default App;
+

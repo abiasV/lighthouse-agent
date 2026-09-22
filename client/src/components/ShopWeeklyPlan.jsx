@@ -1,6 +1,7 @@
 import { useState } from "react";
 import TaskOutcomeForm from "./TaskOutcomeForm";
 import EtsyMissingEvidence from "./EtsyMissingEvidence";
+import EtsyConnection from "./EtsyConnection";
 import { defaultReportingPeriod, normalizeReportingPeriod, todayInTimeZone, shiftDate, PERIOD_ERRORS } from "../../../shared/reportingPeriod.js";
 
 function createEmptyListing() {
@@ -112,7 +113,7 @@ async function readJsonResponse(response) {
   return data;
 }
 
-function ShopWeeklyPlan({ onBack }) {
+function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
   const [reportingPeriod, setReportingPeriod] = useState(() => defaultReportingPeriod());
   const [etsyPeriodConfirmed, setEtsyPeriodConfirmed] = useState(false);
   const [shopName, setShopName] = useState("");
@@ -1416,6 +1417,7 @@ function ShopWeeklyPlan({ onBack }) {
         </div>
 
         <div className="space-y-4">
+          <EtsyConnection returnStatus={etsyReturnStatus} />
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
               Data source
@@ -2096,3 +2098,4 @@ function ShopWeeklyPlan({ onBack }) {
 }
 
 export default ShopWeeklyPlan;
+

@@ -11,6 +11,10 @@ export function createEtsyReadRouter({
   getConnectionByOwnerSessionHash = getEtsyConnectionByOwnerSessionHash,
 } = {}) {
   const router = express.Router();
+  router.use((_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  });
 
   async function requireOwnedConnection(req) {
     const browserSession = readEtsyBrowserSession(req);

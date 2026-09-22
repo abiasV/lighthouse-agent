@@ -24,8 +24,14 @@
   HTTP 200 with the expected service response. The Etsy read route returned the
   expected HTTP 401 `ETSY_BROWSER_SESSION_REQUIRED` without a browser session,
   confirming that the deployed storage gate and session guard are active.
-- Next: complete the production-origin OAuth and restart-persistence checks before
-  wiring real Etsy import into the planner.
+- Implemented: the planner now exposes Connect Etsy, verifies the connection using
+  the browser-owned read route, and offers retry/reconnect states. Browser OAuth
+  callbacks return to a fixed Lighthouse page with a non-sensitive outcome;
+  JSON API clients retain their existing callback contract.
+- Connection UI checks that the OAuth callback matches the current site origin.
+  Sample/manual planning remains available; connecting does not import shop data.
+- Next: confirm the registered callback, test production-origin OAuth and token
+  persistence after restart, then wire real Etsy import into the planner.
 - OAuth state/PKCE sessions are still in memory. An authorization attempt interrupted
   by a restart must be restarted. Established connections use PostgreSQL when configured.
 - Tests cover browser ownership, encryption, tamper rejection, concurrency, rollback
@@ -126,3 +132,29 @@ are made by storage or its tests.
   an actual Etsy token round trip has not.
 - Browser ownership is an MVP connection boundary, not a Lighthouse account system.
   OAuth state remains process-local: use one backend instance until it is persistent.
+
+## Connection UI deployment check
+
+Set backend `ETSY_REDIRECT_URI` and the Etsy app's registered redirect URI to exactly:
+
+```text
+https://lighthouse-agent-app.netlify.app/api/etsy/auth/callback
+```
+
+The existing Netlify /api proxy forwards both authorization and callback requests.
+Do not use the Render origin, localhost, or a deploy-preview origin for this test.
+Cloud Render sign-in was unavailable during the UI implementation, so the currently
+saved callback configuration was not verified.
+
+After both deployments complete, open the production homepage, choose Build My Weekly
+Growth Plan, then Connect Etsy. Authorize on Etsy and expect to return to the planner
+with "Your Etsy connection has been verified." Cancelled, expired and failed attempts
+show a retry message without claiming success. Check connection reads /api/etsy/me.
+Never send screenshots containing OAuth codes, cookies or tokens.
+
+For persistence verification, keep that browser's cookies, restart the backend, then
+use Check connection again. This hosted OAuth/restart test is still outstanding.
+
+Implementation verification: 28 focused OAuth, ownership/read and client request tests
+passed; client lint and production build passed. These tests use mocked Etsy responses,
+not live seller credentials.
