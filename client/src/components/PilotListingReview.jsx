@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { validatePilotReview } from "../../../shared/pilotReview.js";
 import { normalizeReportingPeriod, shiftDate } from "../../../shared/reportingPeriod.js";
+import ListingReviewContent from "./ListingReviewContent";
 
 const fieldClass = "mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-white";
 const buttonClass = "rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50";
@@ -147,7 +148,7 @@ export default function PilotListingReview({ listings, reportingPeriod, suggeste
       <h4 className="font-bold">{review.input.title}</h4>
       <p className="mt-1 text-xs text-slate-500">{review.input.reportingPeriod.startDate} to {review.input.reportingPeriod.endDate} · {review.input.views} views · {review.input.sales} sales</p>
       {review.status === "complete" ? <>
-        {[["Assessment", "assessment"], ["Suggested title — draft", "draftTitle"], ["Suggested description — draft", "draftDescription"], ["One action to test", "nextAction"], ["How to measure it", "measurementPlan"], ["What remains uncertain", "limitations"]].map(([label, key]) => <div className="mt-4" key={key}><h5 className="text-sm font-bold">{label}</h5><p className="mt-1 whitespace-pre-wrap text-sm leading-6">{review.result[key]}</p></div>)}
+        <div className="mt-4"><ListingReviewContent result={review.result} /></div>
         <OutcomeForm review={review} onSaved={updateReview} />
       </> : <p className="mt-3 text-sm">{review.status === "pending" ? "This review is still pending or was interrupted. Refresh later; contact Lighthouse if it remains pending." : "This review did not finish. It counts toward the pilot allowance because the provider may have processed it."}</p>}
     </article>)}

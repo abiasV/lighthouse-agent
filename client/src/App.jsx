@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ShopWeeklyPlan from "./components/ShopWeeklyPlan";
 import TaskOutcomeForm from "./components/TaskOutcomeForm";
 import LegalPage, { LegalFooter } from "./components/LegalPages";
+import SellerReviewExample from "./components/SellerReviewExample";
 
 function App() {
   const [theme, setTheme] = useState(() => {
@@ -1172,7 +1173,7 @@ function App() {
                 href="#pricing"
                 className="text-sm font-medium text-slate-600 transition hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400"
               >
-                Pricing
+                Pilot access
               </a>
             </nav>
           )}
@@ -1184,7 +1185,7 @@ function App() {
                 onClick={handleOpenShopPlan}
                 className="hidden cursor-pointer rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 sm:inline-flex"
               >
-                Start Free
+                Open planner
               </button>
             )}
 
@@ -1219,9 +1220,9 @@ function App() {
                   </h2>
 
                   <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-400">
-                    Lighthouse helps Etsy sellers analyze opportunities,
-                    prioritize the highest-impact actions, and execute the next
-                    best steps with less manual work.
+                    Start with a product that needs attention. Use your shop data
+                    to choose what to investigate, then track what happens after
+                    you make a change.
                   </p>
 
                   <div className="mt-6 flex flex-wrap gap-3 text-sm font-medium text-indigo-800 dark:text-indigo-200">
@@ -1267,8 +1268,9 @@ function App() {
                     </h3>
 
                     <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                      Add your listing performance data and let Lighthouse
-                      prioritize the highest-impact actions for your shop.
+                      Import active listing titles to save retyping, then add
+                      views and sales for the same dates. Or explore an example
+                      before connecting your account.
                     </p>
 
                     <button
@@ -1278,6 +1280,8 @@ function App() {
                     >
                       Build My Weekly Growth Plan
                     </button>
+                    <a href="#sample-review" className="mt-4 block text-center text-sm font-semibold text-indigo-700 underline dark:text-indigo-300">See a sample review — no connection needed</a>
+                    <p className="mt-3 text-center text-xs leading-5 text-slate-500 dark:text-slate-400">Read-only Etsy connection. Personalized AI reviews are invite-only and still being prepared.</p>
 
                     <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-700">
                       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -1325,127 +1329,7 @@ function App() {
                   </div>
                 </div>
 
-                <div className="relative">
-                  <div className="absolute -left-6 -top-8 h-40 w-40 rounded-full bg-indigo-200/40 blur-3xl dark:bg-indigo-900/30" />
-
-                  <div className="absolute -bottom-8 -right-8 h-40 w-40 rounded-full bg-orange-200/50 blur-3xl dark:bg-orange-950/20" />
-
-                  <div className="relative rounded-4xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-300/40 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#F1641E]">
-                          Etsy Shop
-                        </p>
-
-                        <h3 className="mt-1 text-lg font-bold">
-                          Your Growth Overview
-                        </h3>
-                      </div>
-
-                      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                        Illustrative preview
-                      </div>
-                    </div>
-
-                    <div className="mt-5 grid grid-cols-2 gap-3">
-                      <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950">
-                        <p className="text-xs text-slate-500">
-                          Listings analyzed
-                        </p>
-
-                        <p className="mt-2 text-2xl font-bold">42</p>
-                      </div>
-
-                      <div className="rounded-2xl bg-indigo-50 p-4 dark:bg-indigo-950/40">
-                        <p className="text-xs text-indigo-600 dark:text-indigo-300">
-                          Opportunities found
-                        </p>
-
-                        <p className="mt-2 text-2xl font-bold text-indigo-700 dark:text-indigo-300">
-                          3
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5">
-                      <p className="text-sm font-semibold">
-                        Highest-impact actions
-                      </p>
-
-                      <div className="mt-3 space-y-3">
-                        <div className="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                            ↑
-                          </div>
-
-                          <div>
-                            <p className="text-sm font-semibold">
-                              Improve listing performance
-                            </p>
-
-                            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                              Update weak title positioning and underperforming
-                              keywords.
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
-                            ✦
-                          </div>
-
-                          <div>
-                            <p className="text-sm font-semibold">
-                              Test a new product opportunity
-                            </p>
-
-                            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                              Validate demand before spending time creating the
-                              product.
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
-                            ✓
-                          </div>
-
-                          <div>
-                            <p className="text-sm font-semibold">
-                              Execute safe actions
-                            </p>
-
-                            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                              Automate low-risk work and pause before money or
-                              approval is required.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 rounded-2xl bg-slate-950 p-4 text-white dark:bg-black">
-                      <div className="flex items-center gap-3">
-                        <span
-                          aria-hidden="true"
-                          className="h-3 w-3 rounded-full bg-indigo-400"
-                        />
-
-                        <div>
-                          <p className="text-sm font-semibold">
-                            Example Lighthouse workflow
-                          </p>
-
-                          <p className="mt-1 text-xs text-slate-400">
-                            Analyze → Prioritize → Execute
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <SellerReviewExample />
               </div>
             </section>
 
@@ -1463,8 +1347,8 @@ function App() {
                 </h2>
 
                 <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-600 dark:text-slate-400">
-                  Lighthouse turns scattered research and decisions into a clear
-                  execution workflow.
+                  Begin with your product data, choose one action, and keep a
+                  record of what changed.
                 </p>
               </div>
 
@@ -1474,15 +1358,15 @@ function App() {
                     1
                   </div>
 
-                  <p className="mt-4 text-lg font-bold">Analyze</p>
+                  <p className="mt-4 text-lg font-bold">Bring one product</p>
 
                   <p className="mt-1 text-sm font-medium">
-                    Understand opportunities
+                    Import titles or enter manually
                   </p>
 
                   <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    Evaluate demand, competition, profitability, effort, and
-                    scalability.
+                    Add views and sales from the same reporting period. Import
+                    saves typing; it does not import traffic statistics.
                   </p>
                 </div>
 
@@ -1491,15 +1375,15 @@ function App() {
                     2
                   </div>
 
-                  <p className="mt-4 text-lg font-bold">Prioritize</p>
+                  <p className="mt-4 text-lg font-bold">Choose a next step</p>
 
                   <p className="mt-1 text-sm font-medium">
                     Focus on what matters
                   </p>
 
                   <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    Turn research into clear, ranked actions instead of
-                    scattered recommendations.
+                    Review the signals in your weekly plan. Approved pilot
+                    sellers can request a draft grounded in supplied product facts.
                   </p>
                 </div>
 
@@ -1508,15 +1392,15 @@ function App() {
                     3
                   </div>
 
-                  <p className="mt-4 text-lg font-bold">Execute</p>
+                  <p className="mt-4 text-lg font-bold">Measure your change</p>
 
                   <p className="mt-1 text-sm font-medium">
-                    Move from insight to action
+                    Keep control of your shop
                   </p>
 
                   <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    Automate safe tasks and pause when your approval is
-                    required.
+                    Apply only suggestions you have checked, then record views
+                    and sales for a comparable period.
                   </p>
                 </div>
               </div>
@@ -1545,8 +1429,8 @@ function App() {
                     </p>
 
                     <p className="mt-2 text-sm leading-6 text-indigo-700 dark:text-indigo-300">
-                      Lighthouse helps you decide what matters, execute the
-                      work, and track what happens next.
+                      Lighthouse brings product facts, a next action and a
+                      follow-up measurement into the same workflow.
                     </p>
                   </div>
                 </div>
@@ -1554,19 +1438,19 @@ function App() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   {[
                     {
-                      title: "Remember your shop",
+                      title: "Keep your review together",
                       description:
-                        "Keep context about products, decisions, and previous actions in one workflow.",
+                        "Approved pilot accounts can revisit saved product reviews and record follow-up results.",
                     },
                     {
                       title: "Prioritize actions",
                       description:
-                        "Focus on the highest-impact opportunities instead of juggling scattered suggestions.",
+                        "Use the available listing signals to decide what needs investigation first.",
                     },
                     {
-                      title: "Execute the work",
+                      title: "Use drafts you can check",
                       description:
-                        "Move beyond recommendations and automate safe tasks when possible.",
+                        "In the private pilot, review suggested copy and apply only what matches your product.",
                     },
                     {
                       title: "Measure results",
@@ -1614,10 +1498,9 @@ function App() {
                   </h2>
 
                   <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-600 dark:text-slate-400">
-                    We are currently validating Lighthouse with real Etsy
-                    sellers. As verified results become available, this section
-                    will share what sellers found useful and what changed after
-                    they acted.
+                    We are preparing the first seller pilot. No verified seller
+                    results are available yet. This section will share findings
+                    only after real use and with the seller’s permission.
                   </p>
 
                   <div className="mt-7 flex flex-wrap justify-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -1642,137 +1525,35 @@ function App() {
               </div>
             </section>
 
-            <section
-              id="pricing"
-              className="scroll-mt-12 border-t border-slate-200 py-20 dark:border-slate-800"
-            >
-              <div className="text-center">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">
-                  Simple pricing
-                </p>
-
-                <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-                  Start free. Upgrade when Lighthouse saves you more work.
-                </h2>
-
-                <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-600 dark:text-slate-400">
-                  Pricing below is an early product hypothesis and will be
-                  refined after real seller testing.
-                </p>
-              </div>
-
-              <div className="mt-12 grid gap-6 lg:grid-cols-3">
-                <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                  <p className="text-sm font-semibold text-slate-500">Free</p>
-
-                  <div className="mt-3">
-                    <span className="text-4xl font-bold">$0</span>
-                    <span className="ml-1 text-slate-500">/ month</span>
-                  </div>
-
-                  <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    For sellers exploring Lighthouse.
-                  </p>
-
-                  <ul className="mt-6 flex-1 space-y-3 text-sm text-slate-700 dark:text-slate-300">
-                    <li>✓ 3 opportunity analyses per month</li>
-                    <li>✓ Basic opportunity scoring</li>
-                    <li>✓ Limited execution preview</li>
-                    <li className="text-slate-400 dark:text-slate-500">
-                      — Continuous monitoring not included
-                    </li>
-                  </ul>
-
-                  <button
-                    type="button"
-                    onClick={handleOpenShopPlan}
-                    className="mt-8 w-full cursor-pointer rounded-xl border border-slate-300 px-4 py-3 font-semibold transition hover:border-indigo-500 hover:text-indigo-600 dark:border-slate-700 dark:hover:border-indigo-500 dark:hover:text-indigo-400"
-                  >
-                    Start Free
-                  </button>
-                </div>
-
-                <div className="relative flex h-full flex-col rounded-3xl border-2 border-indigo-500 bg-white p-7 shadow-xl shadow-indigo-100 dark:bg-slate-900 dark:shadow-none">
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white">
-                    Most Popular
-                  </div>
-
-                  <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                    Growth
-                  </p>
-
-                  <div className="mt-3">
-                    <span className="text-4xl font-bold">$29</span>
-                    <span className="ml-1 text-slate-500">/ month</span>
-                  </div>
-
-                  <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    For active Etsy sellers who want more execution.
-                  </p>
-
-                  <ul className="mt-6 flex-1 space-y-3 text-sm text-slate-700 dark:text-slate-300">
-                    <li>✓ 30 analyses per month</li>
-                    <li>✓ AI execution</li>
-                    <li>✓ Prioritized growth actions</li>
-                    <li>✓ Execution history</li>
-                    <li>✓ Approval controls</li>
-                    <li>✓ Future Etsy shop connection</li>
-                  </ul>
-
-                  <button
-                    type="button"
-                    onClick={handleOpenShopPlan}
-                    className="mt-8 w-full cursor-pointer rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white transition hover:bg-indigo-700"
-                  >
-                    Start with Growth
-                  </button>
-                </div>
-
-                <div className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                  <p className="text-sm font-semibold text-slate-500">Pro</p>
-
-                  <div className="mt-3">
-                    <span className="text-4xl font-bold">$79</span>
-                    <span className="ml-1 text-slate-500">/ month</span>
-                  </div>
-
-                  <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    For serious sellers with higher usage needs.
-                  </p>
-
-                  <ul className="mt-6 flex-1 space-y-3 text-sm text-slate-700 dark:text-slate-300">
-                    <li>✓ Higher monthly usage limits</li>
-                    <li>✓ More AI execution credits</li>
-                    <li>✓ Multiple opportunity workflows</li>
-                    <li>✓ Advanced monitoring</li>
-                    <li>✓ Priority processing</li>
-                    <li>✓ Deeper shop insights</li>
-                  </ul>
-
-                  <button
-                    type="button"
-                    onClick={handleOpenShopPlan}
-                    className="mt-8 w-full cursor-pointer rounded-xl border border-slate-300 px-4 py-3 font-semibold transition hover:border-indigo-500 hover:text-indigo-600 dark:border-slate-700 dark:hover:border-indigo-500 dark:hover:text-indigo-400"
-                  >
-                    Explore Pro
-                  </button>
-                </div>
+            <section id="pricing" className="scroll-mt-12 border-t border-slate-200 py-16 dark:border-slate-800">
+              <div className="mx-auto max-w-3xl rounded-3xl border border-indigo-200 bg-white p-8 dark:border-indigo-800 dark:bg-slate-900">
+                <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-300">Pilot access</p>
+                <h2 className="mt-3 text-3xl font-bold">A useful review, before a subscription.</h2>
+                <p className="mt-4 leading-7 text-slate-600 dark:text-slate-400">We are preparing a free private pilot for up to five approved sellers. Its focus: a review of one listing, copy you can check and use, and one change to measure. Personalized AI reviews are not open to the public yet.</p>
+                <ul className="mt-5 list-inside list-disc space-y-2 text-sm leading-6">
+                  <li>Explore the example now, without connecting Etsy.</li>
+                  <li>When invited, bring product facts and views and sales for one reporting period.</li>
+                  <li>You decide which suggestions to apply. Nothing is published automatically.</li>
+                  <li>No card, subscription or payment is required for the pilot.</li>
+                </ul>
+                <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">We learn from real use; you receive work you can evaluate. Sales improvements are not guaranteed. Connecting an account does not reserve a place.</p>
+                <a href="#sample-review" className="mt-6 inline-block rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-700">Explore the example review</a>
               </div>
             </section>
 
             <section className="pb-24 pt-8">
               <div className="rounded-4xl bg-slate-950 px-6 py-12 text-center text-white sm:px-12 dark:bg-black">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-300">
-                  Ready to test Lighthouse?
+                  Have a product that needs attention?
                 </p>
 
                 <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl">
-                  Find the highest-impact actions for your Etsy shop.
+                  Choose a clearer next step for your product.
                 </h2>
 
                 <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-300">
-                  Start with your shop data, get a prioritized weekly plan, and
-                  use Lighthouse to decide what deserves attention next.
+                  Explore the sample first, or open the planner to add your shop
+                  data. Personalized AI drafts require approved pilot access.
                 </p>
 
                 <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">

@@ -299,6 +299,17 @@ must supply period views/sales and accurate product details. Buyer data is not r
 
 ### Outreach promise and draft review
 
+- Seller entry includes a no-account, no-network illustrative listing review with
+  product facts, copy drafts, one action and a measurement plan. It is clearly a
+  hand-written example, not a live AI result or evidence of sales uplift. Real
+  saved pilot reviews also have copy controls with a manual-copy fallback.
+- The landing page shows actual private-pilot availability instead of speculative
+  subscription tiers. Import saves typing listing titles; traffic and sales still
+  require seller input. The planner explains these steps before connection.
+- These changes explain the value; they do not prove seller demand or AI quality.
+  Invitation and activation gates remain unchanged. Next: verify a populated shop
+  import and a useful end-to-end one-listing review before sending outreach.
+
 - Before sending, reread and rewrite the existing draft subjects and bodies around
   a concrete benefit for each seller, not a request to test our import or help us
   build our product. Offer a useful review of one relevant listing, ready-to-check

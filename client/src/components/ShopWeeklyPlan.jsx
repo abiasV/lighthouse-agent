@@ -1438,6 +1438,15 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
             Add your Etsy listing performance data and Lighthouse will
             prioritize the actions with the strongest current signals.
           </p>
+          <div className="mt-6 rounded-2xl border border-indigo-200 bg-indigo-50/50 p-5 text-sm dark:border-indigo-800 dark:bg-indigo-950/30">
+            <h3 className="font-bold">Start with a product you want to improve</h3>
+            <ol className="mt-3 list-inside list-decimal space-y-3 leading-6">
+              <li>Import active listing titles from Etsy, or enter a product manually.</li>
+              <li>Add its views and sales for the same date range. Import does not fill these numbers.</li>
+              <li>Use the weekly plan to decide what to investigate. Approved pilot sellers can also request a copy draft and one action to test.</li>
+            </ol>
+            <p className="mt-4 leading-6">Connecting does not change your listings, place orders or grant private-pilot access. No active products? You can still explore the sample workflow.</p>
+          </div>
         </div>
 
         <div className="space-y-4">
