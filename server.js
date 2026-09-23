@@ -9,6 +9,7 @@ import { createPilotAccess, isPrivatePilot, pilotUserIds } from "./src/pilot/pil
 import { createPilotReviewStore } from "./src/pilot/pilotReviewStore.js";
 import { createEtsyTokenCipher } from "./src/integrations/etsy/auth/etsyTokenCipher.js";
 import { createPilotRouter } from "./src/routes/pilotRoutes.js";
+import { publicLegalConfig } from "./shared/pilotTerms.js";
 import {
   configureEtsyConnectionStorage,
   requireEtsyConnectionStorage,
@@ -28,7 +29,8 @@ if (isPrivatePilot()) {
   try {
     pilotUserIds();
     if (!etsyStorage.pool || !process.env.OPENAI_API_KEY?.trim() ||
-        process.env.LIGHTHOUSE_ETSY_REVIEW_APPROVED !== "true") throw new Error();
+        process.env.LIGHTHOUSE_ETSY_REVIEW_APPROVED !== "true" ||
+        !publicLegalConfig(process.env).supportEmail) throw new Error();
     const candidate = createPilotReviewStore({ pool: etsyStorage.pool,
       cipher: createEtsyTokenCipher(process.env.ETSY_TOKEN_ENCRYPTION_KEY) });
     await candidate.check();
@@ -37,12 +39,17 @@ if (isPrivatePilot()) {
     console.error("Private pilot is not ready; private functionality is blocked.");
   }
 }
-const pilotAccess = createPilotAccess({ ready: () => Boolean(pilotStore) });
+const pilotAccess = createPilotAccess({ ready: () => Boolean(pilotStore),
+  hasConsent: id => pilotStore.hasConsent(id) });
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.get("/api/legal", (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.json(publicLegalConfig(process.env));
+});
 
 // Health check
 

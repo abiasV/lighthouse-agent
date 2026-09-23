@@ -18,12 +18,13 @@ export function pilotUserIds(env = process.env) {
 }
 
 export function createPilotAccess({ env = process.env, ready = () => false,
+  hasConsent,
   getConnection = getEtsyConnectionByOwnerSessionHash } = {}) {
   function allowed(connection) {
     return pilotUserIds(env).includes(String(connection.etsyUserId));
   }
 
-  function describe(connection, req, res) {
+  async function describe(connection, req, res) {
     if (!isPrivatePilot(env)) return { enabled: false };
     const approved = allowed(connection);
     const session = readEtsyBrowserSession(req);
@@ -33,7 +34,8 @@ export function createPilotAccess({ env = process.env, ready = () => false,
         secure: true, cookieName: PILOT_COOKIE, path: "/api",
       }));
     }
-    return { enabled: true, approved, ready: ready(), etsyUserId: String(connection.etsyUserId) };
+    return { enabled: true, approved, ready: ready(), etsyUserId: String(connection.etsyUserId),
+      termsAccepted: approved && ready() && hasConsent ? await hasConsent(String(connection.etsyUserId)) : false };
   }
 
   async function requireAccess(req, res, next) {
@@ -55,6 +57,10 @@ export function createPilotAccess({ env = process.env, ready = () => false,
         }
       }
       req.pilotIdentity = { etsyUserId: String(connection.etsyUserId) };
+      const consentPath = req.originalUrl.split("?")[0].replace(/\/$/, "") === "/api/etsy/pilot/consent";
+      if (hasConsent && !consentPath && !await hasConsent(req.pilotIdentity.etsyUserId)) {
+        return res.status(403).json({ error: "PILOT_TERMS_REQUIRED", message: "Read and accept the pilot terms and privacy notice in Weekly Growth Plan before continuing." });
+      }
       return next();
     } catch {
       return res.status(503).json({ error: "PILOT_ACCESS_UNAVAILABLE", message: "Access could not be checked. Please try later." });

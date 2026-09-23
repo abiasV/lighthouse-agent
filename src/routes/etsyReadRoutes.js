@@ -92,7 +92,7 @@ export function createEtsyReadRouter({
       return res.json({
         connected: true,
         user,
-        ...(pilotAccess ? { pilot: pilotAccess.describe(connection, req, res) } : {}),
+        ...(pilotAccess ? { pilot: await pilotAccess.describe(connection, req, res) } : {}),
       });
     } catch (error) {
       if (handleOwnershipError(error, res)) return;

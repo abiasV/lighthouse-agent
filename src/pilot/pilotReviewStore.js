@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { PILOT_TERMS_VERSION } from "../../shared/pilotTerms.js";
 
 export const PILOT_BUDGET_CAD_CENTS = 3000;
 export const PILOT_RESERVATION_CAD_CENTS = 100;
@@ -12,7 +13,15 @@ export function createPilotReviewStore({ pool, cipher }) {
     return { ...value, id: row.id, status: row.status, createdAt: row.created_at };
   };
   return {
+    async hasConsent(etsyUserId) {
+      const result = await pool.query("SELECT 1 FROM lighthouse_pilot_consents WHERE etsy_user_id = $1 AND terms_version = $2", [etsyUserId, PILOT_TERMS_VERSION]);
+      return result.rows.length === 1;
+    },
+    async acceptTerms(etsyUserId) {
+      await pool.query("INSERT INTO lighthouse_pilot_consents (etsy_user_id, terms_version) VALUES ($1,$2) ON CONFLICT DO NOTHING", [etsyUserId, PILOT_TERMS_VERSION]);
+    },
     async check() {
+      await pool.query("SELECT etsy_user_id, terms_version, accepted_at FROM lighthouse_pilot_consents LIMIT 0");
       await pool.query("SELECT id, reserved_cad_cents FROM lighthouse_pilot_budget WHERE id = 1").then(result => {
         if (result.rows.length !== 1) throw new Error("PILOT_BUDGET_MISSING");
       });

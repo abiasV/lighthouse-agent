@@ -3,6 +3,7 @@ import TaskOutcomeForm from "./TaskOutcomeForm";
 import EtsyMissingEvidence from "./EtsyMissingEvidence";
 import EtsyConnection from "./EtsyConnection";
 import PilotListingReview from "./PilotListingReview";
+import PilotConsent from "./PilotConsent";
 import { defaultReportingPeriod, normalizeReportingPeriod, todayInTimeZone, shiftDate, PERIOD_ERRORS } from "../../../shared/reportingPeriod.js";
 
 function createEmptyListing() {
@@ -1442,8 +1443,10 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
         <div className="space-y-4">
           <EtsyConnection returnStatus={etsyReturnStatus} onImport={handleCatalogImport} onPilotChange={setPilot} />
           {pilot?.enabled && <p role="status" className="rounded-xl bg-indigo-50 p-4 text-sm text-indigo-900">
-            {!pilot.approved ? `Your Etsy connection works. This pilot is invitation-only; ask Lighthouse to approve account reference ${pilot.etsyUserId}.` : !pilot.ready ? "Your pilot access is approved. The review service is being prepared." : "Your private pilot access is ready. Add real product data below to prepare an improvement draft."}
+            {!pilot.approved ? `Your Etsy connection works. This pilot is invitation-only; ask Lighthouse to approve account reference ${pilot.etsyUserId}.` : !pilot.ready ? "Your pilot access is approved. The review service is being prepared." : !pilot.termsAccepted ? "Read and accept the pilot terms below before continuing." : "Your private pilot access is ready. Add real product data below to prepare an improvement draft."}
           </p>}
+          {pilot?.enabled && pilot.approved && pilot.ready && !pilot.termsAccepted &&
+            <PilotConsent key={pilot.etsyUserId} onAccepted={() => setPilot(current => ({ ...current, termsAccepted: true }))} />}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
               Data source
@@ -1876,7 +1879,7 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
         </div>
       </div>
 
-      {pilot?.enabled && pilot.approved && pilot.ready && <PilotListingReview
+      {pilot?.enabled && pilot.approved && pilot.ready && pilot.termsAccepted && <PilotListingReview
         key={`${pilot.etsyUserId}:${dataSourceMode}:${pilotDraftVersion}`}
         listings={dataSourceMode === "MANUAL" ? buildRequestListings() : []}
         reportingPeriod={reportingPeriod}

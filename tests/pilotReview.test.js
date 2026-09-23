@@ -13,6 +13,7 @@ import { createEtsyBrowserSession } from "../src/integrations/etsy/auth/etsyBrow
 import { createPilotRouter } from "../src/routes/pilotRoutes.js";
 import shopRoutes from "../src/routes/shopRoutes.js";
 import { shopPlans } from "../src/state/sessionStore.js";
+import { PILOT_TERMS_VERSION, publicLegalConfig } from "../shared/pilotTerms.js";
 
 const input = { title: "Meal planner PDF", facts: "A printable two-page PDF with a weekly meal plan and shopping list.", problem: "People view it but few buy. Clarify the product value.", views: 700, sales: 5, reportingPeriod: defaultReportingPeriod() };
 const origin = "https://lighthouse.example";
@@ -65,16 +66,65 @@ test("access checks real browser ownership, invitation, origin and live revocati
   assert.equal((await fetch(base + "/api/shop", { headers })).status, 503);
 });
 
-test("only approved accounts receive a scoped HttpOnly pilot alias", () => {
+test("only approved accounts receive a scoped HttpOnly pilot alias", async () => {
   const session = createEtsyBrowserSession();
   const cookies = [];
   const access = createPilotAccess({ env, ready: () => true });
   const req = { headers: { cookie: `lighthouse_etsy_session=${session.token}` } };
   const res = { append: (name, value) => cookies.push([name, value]) };
-  assert.equal(access.describe({ etsyUserId: "999" }, req, res).approved, false);
+  assert.equal((await access.describe({ etsyUserId: "999" }, req, res)).approved, false);
   assert.equal(cookies.length, 0);
-  assert.equal(access.describe({ etsyUserId: "123" }, req, res).approved, true);
+  assert.equal((await access.describe({ etsyUserId: "123" }, req, res)).approved, true);
   assert.match(cookies[0][1], /Path=\/api; HttpOnly; SameSite=Lax; Max-Age=2592000; Secure/);
+});
+
+test("public legal configuration exposes only a valid public contact and terms version", () => {
+  assert.deepEqual(publicLegalConfig({ LIGHTHOUSE_SUPPORT_EMAIL: " support@example.org ", OPENAI_API_KEY: "secret", ETSY_DATABASE_URL: "secret" }),
+    { supportEmail: "support@example.org", termsVersion: PILOT_TERMS_VERSION });
+  for (const value of [undefined, "", "private", "user@example.org\r\nBCC:other@example.org", "mailto:user@example.org"]) {
+    assert.equal(publicLegalConfig({ LIGHTHOUSE_SUPPORT_EMAIL: value }).supportEmail, null);
+  }
+});
+
+test("pilot consent is explicit, versioned, bound to the verified account and enforced server-side", async t => {
+  const session = createEtsyBrowserSession();
+  const accepted = new Set();
+  let identity = "123", failConsent = false, writes = 0;
+  const hasConsent = async id => { if (failConsent) throw new Error("private database error"); return accepted.has(id); };
+  const access = createPilotAccess({ env, ready: () => true, hasConsent, getConnection: async () => ({ etsyUserId: identity }) });
+  const store = { acceptTerms: async id => { writes++; accepted.add(id); }, list: async () => [] };
+  const base = await serve(t, app => {
+    app.use("/api/etsy/pilot", createPilotRouter({ access, store }));
+    app.use("/api/shop", access.requireAccess, (_req, res) => res.json({ ok: true }));
+    app.use("/api/etsy/catalog", access.requireAccess, (_req, res) => res.json({ ok: true }));
+  });
+  const headers = { Cookie: `lighthouse_etsy_session=${session.token}; ${PILOT_COOKIE}=${session.token}`, Origin: origin, "Content-Type": "application/json" };
+  const post = (body, extra = {}) => fetch(base + "/api/etsy/pilot/consent", { method: "POST", headers: { ...headers, ...extra }, body: JSON.stringify(body) });
+  for (const path of ["/api/shop/plan", "/api/etsy/catalog", "/api/etsy/pilot/reviews"]) {
+    const response = await fetch(base + path, { headers });
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).error, "PILOT_TERMS_REQUIRED");
+  }
+  for (const body of [{}, { accepted: "true", termsVersion: PILOT_TERMS_VERSION }, { accepted: false, termsVersion: PILOT_TERMS_VERSION }, { accepted: true, termsVersion: "old-version" }]) {
+    assert.equal((await post(body)).status, 400);
+  }
+  assert.equal(writes, 0);
+  const body = { accepted: true, termsVersion: PILOT_TERMS_VERSION, etsyUserId: "456" };
+  assert.equal((await post(body, { Origin: "https://other.example" })).status, 403);
+  assert.equal((await post(body, { Cookie: "" })).status, 401);
+  assert.equal((await post(body)).status, 200);
+  assert.deepEqual([...accepted], ["123"]);
+  assert.equal((await fetch(base + "/api/etsy/pilot/reviews", { headers })).status, 200);
+  const req = { headers: { cookie: headers.Cookie } };
+  assert.equal((await access.describe({ etsyUserId: "123" }, req, { append() {} })).termsAccepted, true);
+  identity = "456";
+  assert.equal((await fetch(base + "/api/shop/plan", { headers })).status, 403);
+  identity = "999";
+  assert.equal((await post(body)).status, 403);
+  identity = "123"; failConsent = true;
+  const unavailable = await fetch(base + "/api/etsy/pilot/reviews", { headers });
+  assert.equal(unavailable.status, 503);
+  assert.equal((await unavailable.text()).includes("private database error"), false);
 });
 
 test("AI request is bounded, has no tools, no stored response and verifies output", async () => {

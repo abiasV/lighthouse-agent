@@ -260,13 +260,22 @@ must supply period views/sales and accurate product details. Buyer data is not r
    status alone is not evidence that every proposed use is approved.
    Official sources: https://www.etsy.com/legal/api/ and
    https://developers.etsy.com/documentation/ .
-2. Publish accurate pilot terms, privacy/retention/deletion details, monitored
-   support contact and Etsy attribution, and implement terms acceptance. These are
-   still pending; do not invite sellers or enable AI before they are complete.
+2. Public `/terms`, `/privacy` and `/support` pages and a footer are implemented.
+   Set `LIGHTHOUSE_SUPPORT_EMAIL` in Render to the operator's chosen monitored
+   public email; `/api/legal` exposes only that contact and the terms version.
+   The operator has not yet selected a public contact. Private readiness fails
+   closed without a valid address. Verify the deployed pages and contact before
+   inviting sellers; these texts are not a guarantee of legal compliance.
+   Migration `004_pilot_consent.sql` records the verified Etsy account, current
+   terms version and database timestamp. The unchecked acceptance form links to
+   both texts; all protected pilot APIs require current acceptance, except the
+   consent endpoint itself. Old versions require acceptance again. Privacy text
+   accurately discloses that automatic record deletion is not implemented.
 3. Run the PostgreSQL test against a dedicated LOCAL database, never production:
    `ETSY_TEST_DATABASE_URL=postgresql://.../lighthouse_test node --test tests/pilotPostgres.integration.test.js`
    It covers cross-client races, deduplication, both caps, persistence, encrypted
-   records and owner isolation. The test is skipped if no local test DB is supplied.
+   records, owner isolation and durable versioned consent. The test is skipped if
+   no local test DB is supplied. Live migrations and this database test remain pending.
 4. Run `npm run db:migrate:etsy` with the existing server-side database settings.
    It is additive/idempotent and does not clear the budget. Do not delete ledger
    rows or reset the singleton to reclaim failed requests.
@@ -278,7 +287,7 @@ must supply period views/sales and accurate product details. Buyer data is not r
    written approval and the preceding gates are complete. Missing configuration
    or schema closes private functionality; it never falls back to memory storage.
 6. Test on deployed Netlify with the owner's approved account: Weekly Growth Plan
-   → Connect Etsy → Enter manually. Use a product you own, its actual reporting
+   → Connect Etsy → Read and accept pilot terms → Enter manually. Use a product you own, its actual reporting
    period/views/sales, then enter factual details and the problem in Private seller
    pilot → Prepare my improvement draft. Check the output before copying it, reload
    and retrieve the saved review. Verify an uninvited account is denied; disconnect

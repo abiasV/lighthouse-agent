@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ShopWeeklyPlan from "./components/ShopWeeklyPlan";
 import TaskOutcomeForm from "./components/TaskOutcomeForm";
+import LegalPage, { LegalFooter } from "./components/LegalPages";
 
 function App() {
   const [theme, setTheme] = useState(() => {
@@ -1124,6 +1125,9 @@ function App() {
     );
   }
 
+  const legalPage = window.location.pathname.replace(/^\/+|\/+$/g, "");
+  if (["terms", "privacy", "support"].includes(legalPage)) return <LegalPage page={legalPage} />;
+
   return (
     <main className="min-h-screen bg-linear-to-br from-slate-50 via-white to-orange-50/40 px-5 py-6 text-slate-900 transition-colors duration-300 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 dark:text-slate-100">
       <div className="mx-auto max-w-7xl">
@@ -1922,6 +1926,7 @@ function App() {
           </section>
         )}
       </div>
+      <LegalFooter />
     </main>
   );
 }

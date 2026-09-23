@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { Pool } from "pg";
 import { createPilotReviewStore } from "../src/pilot/pilotReviewStore.js";
 import { createEtsyTokenCipher } from "../src/integrations/etsy/auth/etsyTokenCipher.js";
+import { PILOT_TERMS_VERSION } from "../shared/pilotTerms.js";
 
 const databaseUrl = process.env.ETSY_TEST_DATABASE_URL;
 test("Postgres pilot: concurrent reservations, retry deduplication, limits, restart and privacy", {
@@ -24,9 +25,19 @@ test("Postgres pilot: concurrent reservations, retry deduplication, limits, rest
     a = new Pool(config); b = new Pool(config);
     const sql = await readFile(new URL("../migrations/003_private_pilot.sql", import.meta.url), "utf8");
     await a.query(sql); await a.query(sql);
+    const consentSql = await readFile(new URL("../migrations/004_pilot_consent.sql", import.meta.url), "utf8");
+    await a.query(consentSql); await a.query(consentSql);
     const storeA = createPilotReviewStore({ pool: a, cipher });
     const storeB = createPilotReviewStore({ pool: b, cipher });
     await storeA.check();
+    await a.query("INSERT INTO lighthouse_pilot_consents (etsy_user_id, terms_version) VALUES ($1,$2)", ["123", "old-version"]);
+    assert.equal(await storeA.hasConsent("123"), false);
+    await Promise.all([storeA.acceptTerms("123"), storeB.acceptTerms("123")]);
+    assert.equal(await storeB.hasConsent("123"), true);
+    assert.equal(await storeB.hasConsent("456"), false);
+    const consents = await a.query("SELECT accepted_at FROM lighthouse_pilot_consents WHERE etsy_user_id=$1 AND terms_version=$2", ["123", PILOT_TERMS_VERSION]);
+    assert.equal(consents.rows.length, 1);
+    assert.ok(consents.rows[0].accepted_at instanceof Date);
     const key = randomUUID();
     const duplicates = await Promise.all([storeA, storeB, storeA, storeB].map(store => store.reserve("123", key, input)));
     assert.equal(duplicates.filter(item => item.fresh).length, 1);
@@ -40,6 +51,7 @@ test("Postgres pilot: concurrent reservations, retry deduplication, limits, rest
     await storeA.outcome("123", firstId, { note: "Updated description" });
     await a.end(); a = new Pool(config);
     const restarted = createPilotReviewStore({ pool: a, cipher });
+    assert.equal(await restarted.hasConsent("123"), true);
     assert.equal((await restarted.list("123"))[0].outcome.note, "Updated description");
     assert.equal((await restarted.reserve("123", key, input)).fresh, false);
 

@@ -2,6 +2,7 @@ import express from "express";
 import { validatePilotReview } from "../../shared/pilotReview.js";
 import { normalizeReportingPeriod } from "../../shared/reportingPeriod.js";
 import { generatePilotReview } from "../pilot/generatePilotReview.js";
+import { PILOT_TERMS_VERSION } from "../../shared/pilotTerms.js";
 
 const uuid = value => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 const errors = {
@@ -23,6 +24,15 @@ export function createPilotRouter({ store, access, generate = generatePilotRevie
     // Disabled pilot must never fall through to an unguarded paid call.
     if (!req.pilotIdentity || !store) return res.status(503).json({ error: "PILOT_NOT_READY", message: "The private review pilot is not available yet." });
     return next();
+  });
+  router.post("/consent", async (req, res) => {
+    if (req.body?.accepted !== true || req.body?.termsVersion !== PILOT_TERMS_VERSION) {
+      return res.status(400).json({ error: "PILOT_TERMS_INVALID", message: "Please read and accept the current pilot terms and privacy notice." });
+    }
+    try {
+      await store.acceptTerms(req.pilotIdentity.etsyUserId);
+      return res.json({ accepted: true, termsVersion: PILOT_TERMS_VERSION });
+    } catch (error) { return fail(error, res); }
   });
   router.get("/reviews", async (req, res) => {
     try { return res.json({ reviews: await store.list(req.pilotIdentity.etsyUserId) }); }
