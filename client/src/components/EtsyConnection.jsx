@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { requestEtsyCatalog } from "../utils/etsyCatalog.js";
+import EtsyListingPicker from "./EtsyListingPicker";
 import {
   ETSY_RETURN_MESSAGES,
   isLocalEtsyDevelopmentOrigin,
@@ -24,6 +25,7 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
   const activeRequest = useRef(null);
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState("");
+  const [pendingCatalog, setPendingCatalog] = useState(null);
   const importRequest = useRef(null);
   const onImportRef = useRef(onImport);
   const onPilotRef = useRef(onPilotChange);
@@ -84,6 +86,7 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
     if (switchRequest.current || !window.confirm("Disconnect this Etsy account? This will clear the form and plan currently displayed. Your Etsy shop will not be changed.")) return;
     activeRequest.current?.abort();
     importRequest.current?.abort();
+    setPendingCatalog(null);
     const controller = new AbortController();
     switchRequest.current = controller;
     setSwitching(true);
@@ -109,13 +112,12 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
     const timeout = setTimeout(() => controller.abort("timeout"), 60000);
     setImporting(true);
     setImportMessage("");
+    setPendingCatalog(null);
     try {
       const draft = await requestEtsyCatalog({ signal: controller.signal });
       if (controller.signal.aborted) return;
-      const applied = onImportRef.current?.(draft);
-      setImportMessage(applied
-        ? `Imported ${draft.listings.length} active listings. Add views and sales below to build your plan.`
-        : "Import cancelled. Your existing form data was kept.");
+      setPendingCatalog(draft);
+      setImportMessage("Choose the products you want to review below. Your current form has not changed.");
     } catch (error) {
       if (controller.signal.aborted && controller.signal.reason !== "timeout") return;
       setImportMessage(controller.signal.aborted ? "Import timed out. Please try again. Your form data was kept." : error.message);
@@ -130,12 +132,23 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
     }
   }
 
+  function applyCatalogSelection(draft) {
+    if (status !== "connected" || switching || importing) return;
+    const applied = onImportRef.current?.(draft);
+    if (applied) setPendingCatalog(null);
+    setImportMessage(applied
+      ? `Imported ${draft.listings.length} selected product${draft.listings.length === 1 ? "" : "s"}. Add views and sales in the form below.`
+      : "Import cancelled. Your existing form data was kept. You can change the selection or cancel.");
+  }
+
   useEffect(() => {
     if (localDevelopment) return;
 
     function handlePageShow(event) {
       if (!shouldRecheckEtsyConnectionAfterPageShow(event, statusRef.current)) return;
       activeRequest.current?.abort();
+      importRequest.current?.abort();
+      setPendingCatalog(null);
       setStatus("checking");
       setMessage("");
       setAttempt((value) => value + 1);
@@ -146,6 +159,7 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
   }, [localDevelopment]);
 
   async function connect() {
+    setPendingCatalog(null);
     activeRequest.current?.abort();
     const controller = new AbortController();
     activeRequest.current = controller;
@@ -178,7 +192,7 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
       <h3 className="font-bold text-slate-900 dark:text-white">Connect your Etsy account</h3>
       <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
         Authorize read-only access on Etsy. Lighthouse will not change listings or place orders.
-        Import your shop name and active listing titles, then add views and sales for your reporting period.
+        Choose which active products to import, then add views and sales for your reporting period.
       </p>
       <p className="mt-3 text-sm text-slate-700 dark:text-slate-200" role="status" aria-live="polite">
         {status === "checking"
@@ -199,7 +213,7 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
         {!localDevelopment && status === "connected" && onImport && (
           <button type="button" disabled={busy} onClick={importCatalog}
             className="rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
-            {importing ? "Importing listings…" : "Import My Etsy Listings"}
+            {importing ? "Loading products…" : "Import My Etsy Listings"}
           </button>
         )}
         {!localDevelopment && status !== "connected" && (
@@ -210,6 +224,8 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
         )}
         {!localDevelopment && (
           <button type="button" disabled={busy} onClick={() => {
+            setPendingCatalog(null);
+            setImportMessage("");
             setStatus("checking");
             setMessage("");
             setAttempt((value) => value + 1);
@@ -219,6 +235,9 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
         )}
       </div>
       {importMessage && <p role="status" className="mt-3 text-sm text-slate-700 dark:text-slate-200">{importMessage}</p>}
+      {pendingCatalog && status === "connected" && !busy && <EtsyListingPicker
+        draft={pendingCatalog} onApply={applyCatalogSelection}
+        onCancel={() => { setPendingCatalog(null); setImportMessage("Import cancelled. Your existing form data was kept."); }} />}
     </div>
   );
 }

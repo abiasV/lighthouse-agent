@@ -306,6 +306,11 @@ must supply period views/sales and accurate product details. Buyer data is not r
 - The landing page shows actual private-pilot availability instead of speculative
   subscription tiers. Import saves typing listing titles; traffic and sales still
   require seller input. The planner explains these steps before connection.
+- Import now loads a searchable product picker before changing the planner. No
+  product is preselected; the seller explicitly selects one or more and confirms.
+  Cancelling keeps existing form data. Replacing populated form data still uses
+  the existing confirmation. Connection checks/switches discard pending selection.
+  Only selected titles enter the form; views and sales stay blank for seller input.
 - These changes explain the value; they do not prove seller demand or AI quality.
   Invitation and activation gates remain unchanged. Next: verify a populated shop
   import and a useful end-to-end one-listing review before sending outreach.

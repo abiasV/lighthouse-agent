@@ -1,11 +1,38 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import getEtsyShopCatalog from "../src/integrations/etsy/getEtsyShopCatalog.js";
-import { catalogToManualDraft, requestEtsyCatalog } from "../client/src/utils/etsyCatalog.js";
+import { catalogToManualDraft, requestEtsyCatalog, selectCatalogListings } from "../client/src/utils/etsyCatalog.js";
 
 const shop = { shop_id: 22, user_id: 11, shop_name: "Real Shop", email: "private" };
 const listing = id => ({ listing_id: id, shop_id: 22, state: "active", title: `Product ${id}`, views: 9000, num_favorers: 90 });
 const read = apiGet => getEtsyShopCatalog({ etsyUserId: "11", connectionId: "owned", apiGet });
+
+test("selected import includes only chosen products and keeps the fetched catalog unchanged", () => {
+  const draft = catalogToManualDraft({ source: "ETSY", shopName: "Shop", listings: [
+    { id: "11", title: "First product" }, { id: "22", title: "Second product" }, { id: "33", title: "Third product" },
+  ] });
+  const selected = selectCatalogListings(draft, ["33", "11"]);
+  assert.equal(selected.shopName, "Shop");
+  assert.deepEqual(selected.listings.map(item => item.id), ["11", "33"]);
+  assert.ok(selected.listings.every(item => item.views === "" && item.sales === ""));
+  selected.listings[0].views = "50";
+  assert.equal(draft.listings[0].views, "");
+  assert.equal(draft.listings.length, 3);
+  for (const ids of [[], ["99"], ["11", "99"], ["11", "11"]]) {
+    assert.throws(() => selectCatalogListings(draft, ids), /Choose at least one product/);
+  }
+});
+
+test("import explains pilot access and terms errors without exposing server details", async () => {
+  for (const [code, message] of [["PILOT_TERMS_REQUIRED", /accept the pilot terms/], ["PILOT_INVITATION_REQUIRED", /approved Etsy accounts/], ["PILOT_NOT_READY", /still being prepared/]]) {
+    await assert.rejects(requestEtsyCatalog({ fetchImpl: async () => ({ ok: false, json: async () => ({ error: code, message: "private server detail" }) }) }), error => {
+      assert.equal(error.code, code);
+      assert.match(error.message, message);
+      assert.equal(error.message.includes("private server detail"), false);
+      return true;
+    });
+  }
+});
 
 test("shop summary returns only owned identity without loading listings", async () => {
   let calls = 0;
