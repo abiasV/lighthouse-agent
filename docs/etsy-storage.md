@@ -309,6 +309,11 @@ must supply period views/sales and accurate product details. Buyer data is not r
 - These changes explain the value; they do not prove seller demand or AI quality.
   Invitation and activation gates remain unchanged. Next: verify a populated shop
   import and a useful end-to-end one-listing review before sending outreach.
+- Deployment checkpoint (2026-09-23): seller-entry code is committed in `6e48b11`.
+  Netlify deployment `6ab336405bf3524672299da1` failed with "Skipped due to account
+  credit usage exceeded". Production still serves the prior `e3d374a` deployment;
+  do not claim the new frontend or policy pages are live. No hosting upgrade was
+  purchased. Resolve hosting credits before repeating deployment and browser QA.
 
 - Before sending, reread and rewrite the existing draft subjects and bodies around
   a concrete benefit for each seller, not a request to test our import or help us
