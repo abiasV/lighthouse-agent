@@ -1,4 +1,4 @@
-export const PILOT_TERMS_VERSION = "2026-09-23-v1";
+export const PILOT_TERMS_VERSION = "2026-09-24-v2";
 
 export function publicLegalConfig(env = {}) {
   const email = typeof env.LIGHTHOUSE_SUPPORT_EMAIL === "string" ? env.LIGHTHOUSE_SUPPORT_EMAIL.trim() : "";

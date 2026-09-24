@@ -3,6 +3,8 @@ import express from "express";
 import getEtsyAuthenticatedUser from "../integrations/etsy/getEtsyAuthenticatedUser.js";
 import getEtsyUser from "../integrations/etsy/getEtsyUser.js";
 import getEtsyShopCatalog from "../integrations/etsy/getEtsyShopCatalog.js";
+import getEtsyPeriodSales from "../integrations/etsy/getEtsyPeriodSales.js";
+import { PERIOD_ERRORS } from "../../shared/reportingPeriod.js";
 import { getEtsyConnectionByOwnerSessionHash } from "../integrations/etsy/auth/etsyConnectionStore.js";
 import { readEtsyBrowserSession } from "../integrations/etsy/auth/etsyBrowserSession.js";
 
@@ -10,6 +12,8 @@ export function createEtsyReadRouter({
   getAuthenticatedUser = getEtsyAuthenticatedUser,
   getUser = getEtsyUser,
   getShopCatalog = getEtsyShopCatalog,
+  getPeriodSales = getEtsyPeriodSales,
+  salesImportEnabled = process.env.LIGHTHOUSE_PRIVATE_PILOT === "true" && process.env.LIGHTHOUSE_ETSY_REVIEW_APPROVED === "true",
   getConnectionByOwnerSessionHash = getEtsyConnectionByOwnerSessionHash,
   pilotAccess,
 } = {}) {
@@ -70,6 +74,37 @@ export function createEtsyReadRouter({
       };
       const [status, message] = errors[error.message] ?? [502, "Could not import your Etsy listings. Nothing was changed. Please retry or use manual entry."];
       return res.status(status).json({ error: errors[error.message] ? error.message : "ETSY_CATALOG_IMPORT_FAILED", message });
+    }
+  });
+
+  router.get("/shop/sales", ...(pilotAccess ? [pilotAccess.requireAccess] : []), async (req, res) => {
+    try {
+      const connection = await requireOwnedConnection(req);
+      if (!salesImportEnabled) return res.status(503).json({ error: "ETSY_SALES_NOT_READY", message: "Sales import is being prepared. You can enter your period figures manually." });
+      const result = await getPeriodSales({
+        connectionId: connection.connectionId, etsyUserId: connection.etsyUserId,
+        clientId: process.env.ETSY_CLIENT_ID, keystring: process.env.ETSY_CLIENT_ID,
+        sharedSecret: process.env.ETSY_SHARED_SECRET,
+        shopId: req.query.shopId,
+        listingIds: typeof req.query.listingIds === "string" ? req.query.listingIds.split(",") : null,
+        reportingPeriod: { startDate: req.query.startDate, endDate: req.query.endDate, timeZone: "UTC" },
+      });
+      return res.json(result);
+    } catch (error) {
+      if (handleOwnershipError(error, res)) return;
+      if (PERIOD_ERRORS[error.message]) return res.status(400).json({ error: error.message, message: PERIOD_ERRORS[error.message] });
+      const errors = {
+        ETSY_SALES_PERIOD_INVALID: [400, "Choose up to 90 completed days for sales import."],
+        ETSY_SALES_SELECTION_INVALID: [400, "Import and select your Etsy products first."],
+        ETSY_SALES_SHOP_MISMATCH: [409, "Your connected shop changed. Import its products again."],
+        ETSY_SALES_PERMISSION_REQUIRED: [403, "Reconnect Etsy to grant read access to sales, then retry."],
+        ETSY_REAUTHORIZATION_REQUIRED: [401, "Your Etsy connection expired. Please reconnect."],
+        ETSY_RATE_LIMITED: [429, "Etsy is busy. Please try importing sales again later."],
+        ETSY_SALES_TOO_LARGE: [422, "This import exceeds 1,000 orders across both periods. Choose a shorter date range or enter sales manually."],
+        ETSY_SALES_CHANGED: [502, "Orders changed or the response was incomplete. Nothing was imported. Please retry."],
+      };
+      const [status, message] = errors[error.message] ?? [502, "Sales import could not be completed. Your figures have been kept. Retry or enter sales manually."];
+      return res.status(status).json({ error: errors[error.message] ? error.message : "ETSY_SALES_IMPORT_FAILED", message });
     }
   });
 

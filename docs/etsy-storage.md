@@ -214,8 +214,12 @@ description, one action to test, and a saved follow-up with a later equal-length
 reporting period. This is separate from the existing deterministic Weekly Planner;
 its scoring thresholds and mock execution/approval packages are unchanged.
 AI suggestions are hypotheses/drafts, not verified market research or sales promises.
-Imported data currently includes only shop name and active listing titles. Sellers
-must supply period views/sales and accurate product details. Buyer data is not requested.
+Import includes shop name and selected active listing titles. When the private pilot
+and Etsy approval gates are enabled, the planner also requests period paid-unit
+sales and the preceding period's trend. Sellers still supply period views, missing
+or refund-ambiguous sales, and accurate product facts. Raw receipt responses can
+contain buyer details; the sales adapter discards these without logging, storing,
+returning them to the browser or sending them to AI.
 
 ### Access and spending boundaries
 
@@ -304,13 +308,14 @@ must supply period views/sales and accurate product details. Buyer data is not r
   hand-written example, not a live AI result or evidence of sales uplift. Real
   saved pilot reviews also have copy controls with a manual-copy fallback.
 - The landing page shows actual private-pilot availability instead of speculative
-  subscription tiers. Import saves typing listing titles; traffic and sales still
-  require seller input. The planner explains these steps before connection.
+  subscription tiers. Import saves typing listing titles and can fill period sales;
+  traffic still requires seller input. The planner explains these steps before connection.
 - Import now loads a searchable product picker before changing the planner. No
   product is preselected; the seller explicitly selects one or more and confirms.
   Cancelling keeps existing form data. Replacing populated form data still uses
   the existing confirmation. Connection checks/switches discard pending selection.
-  Only selected titles enter the form; views and sales stay blank for seller input.
+  Only selected products enter the form; a subsequent request loads their period
+  sales. Views stay blank; failed sales imports never turn unknown values into zero.
 - These changes explain the value; they do not prove seller demand or AI quality.
   Invitation and activation gates remain unchanged. Next: verify a populated shop
   import and a useful end-to-end one-listing review before sending outreach.
@@ -333,9 +338,49 @@ must supply period views/sales and accurate product details. Buyer data is not r
 - Keep the initial invitation short and make replying the first step. Explain
   the required effort and data access before onboarding. Do not make a lengthy
   survey or feedback obligation the price of receiving the promised deliverable.
-- Review all ten existing drafts against these criteria at the outreach gate;
-  they have not yet been rewritten or sent. Send only after readiness and recipient
-  checks, then select up to five interested, eligible sellers for approved access.
+- On 2026-09-24 all ten existing Gmail outreach drafts were rewritten in place.
+  Subjects now use "One Etsy listing to improve at [shop]?". Bodies offer a free,
+  personally supported one-product review, copy suggestions and a measurable action;
+  they disclose that private access is still being prepared, do not promise higher
+  sales and ask for a listing link first. Existing recipients were preserved and
+  the operator-approved postal address replaced the placeholder. No messages sent.
+  User approval of the revised drafts is required before sending, in addition to
+  readiness and current recipient/active-shop checks. At most five sellers get access.
+
+### Reporting-period sales import (2026-09-24)
+
+- `GET /api/etsy/shop/sales` resolves the connection from the HttpOnly cookie and
+  verifies that the requested shop belongs to the stored Etsy user. It respects
+  existing invitation/consent middleware. The default route is also disabled unless
+  both `LIGHTHOUSE_PRIVATE_PILOT=true` and `LIGHTHOUSE_ETSY_REVIEW_APPROVED=true`;
+  do not enable these to bypass the activation gates above.
+- Uses documented `getShopReceipts` with `transactions_r`, date filters, paid and
+  non-cancelled filters. Scope was already included in OAuth. A provider 403 asks
+  the seller to reconnect; no write permissions are requested.
+- Sales mean **paid units by receipt creation UTC date**, not revenue, shop-lifetime
+  sales, or Etsy Stats order counts. Both periods use complete UTC days. Pattern,
+  unpaid, cancelled and fully refunded receipts are excluded. Partial refunds or
+  other ambiguous refund records leave the affected product's sales/trend blank
+  for seller review. No fabricated zeroes or refund-unit estimates.
+- Limits: 90 days per period, 500 selected IDs, 1,000 receipts across both periods,
+  a 45-second provider deadline and 60-second UI deadline. Missing/duplicate pages,
+  changing counts, malformed data and foreign ownership fail the entire import.
+- Selection triggers sales import automatically. Sellers can refresh or enter
+  figures manually if it fails. Existing manual sales/trends and in-flight edits
+  are preserved. Changing report dates clears prior performance inputs; old
+  requests are aborted on period/selection change or leaving the form.
+- The current official OpenAPI spec has no date-range listing views endpoint.
+  Lifetime views must never populate period views. Sellers must copy product
+  views for the same dates from Etsy Stats; do not substitute visits for views.
+  Reference: https://www.etsy.com/openapi/generated/oas/3.0.0.json
+- Privacy/terms describe receipt processing; version `2026-09-24-v2` requires new
+  acceptance in private mode. Any Etsy application/use-case description must now
+  disclose receipt reads/aggregate sales and select **Read sales data**; Commercial
+  status alone is not the written analytics/AI permission described above.
+- Validation: 178 relevant Etsy/pilot/reporting tests passed; 1 PostgreSQL integration
+  test skipped without a local test DB. Frontend lint and production build passed.
+  Real populated-shop receipt import, provider output quality and deployment remain
+  unverified. Netlify credit exhaustion still blocks production publication.
 
 Local sample/manual development is unchanged while the feature flag is absent.
 Real Etsy OAuth remains hosted-only. To close all private functionality without

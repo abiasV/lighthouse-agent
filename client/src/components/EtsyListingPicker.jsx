@@ -37,7 +37,7 @@ export default function EtsyListingPicker({ draft, onApply, onCancel }) {
       <button type="button" onClick={onCancel} className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600">Cancel</button>
       <button type="submit" disabled={!selectedIds.length} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Import selected products ({selectedIds.length})</button>
     </div>
-    <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Next: enter views and sales for the selected products and the same reporting period. These numbers are not imported.</p>
+    <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">Next: check the reporting dates and sales import, then add each product’s views from Etsy Stats. You can enter sales manually if import is unavailable.</p>
     {error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}</p>}
   </form>;
 }

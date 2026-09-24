@@ -137,7 +137,7 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
     const applied = onImportRef.current?.(draft);
     if (applied) setPendingCatalog(null);
     setImportMessage(applied
-      ? `Imported ${draft.listings.length} selected product${draft.listings.length === 1 ? "" : "s"}. Add views and sales in the form below.`
+      ? `Imported ${draft.listings.length} selected product${draft.listings.length === 1 ? "" : "s"}. Check sales import and add views in the form below.`
       : "Import cancelled. Your existing form data was kept. You can change the selection or cancel.");
   }
 
@@ -192,7 +192,7 @@ export default function EtsyConnection({ returnStatus, onImport, onPilotChange }
       <h3 className="font-bold text-slate-900 dark:text-white">Connect your Etsy account</h3>
       <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
         Authorize read-only access on Etsy. Lighthouse will not change listings or place orders.
-        Choose which active products to import, then add views and sales for your reporting period.
+        Choose active products to import. Lighthouse can request sales for your selected dates; add views from Etsy Stats.
       </p>
       <p className="mt-3 text-sm text-slate-700 dark:text-slate-200" role="status" aria-live="polite">
         {status === "checking"

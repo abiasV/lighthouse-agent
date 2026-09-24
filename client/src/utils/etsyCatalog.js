@@ -11,9 +11,9 @@ export function catalogToManualDraft(catalog) {
       throw new Error("Lighthouse received invalid listing data. Please try again.");
     }
     ids.add(id);
-    return { id, title: listing.title.trim(), views: "", sales: "", trendPercent: "" };
+    return { id, etsyListingId: id, title: listing.title.trim(), views: "", sales: "", trendPercent: "" };
   });
-  return { shopName: catalog.shopName.trim(), listings };
+  return { shopId: catalog.shopId, shopName: catalog.shopName.trim(), listings };
 }
 
 export function selectCatalogListings(draft, selectedIds) {

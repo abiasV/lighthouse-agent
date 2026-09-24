@@ -1268,8 +1268,8 @@ function App() {
                     </h3>
 
                     <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                      Import active listing titles to save retyping, then add
-                      views and sales for the same dates. Or explore an example
+                      Import selected products, check available sales import, and add
+                      views for the same dates. Or explore an example
                       before connecting your account.
                     </p>
 
@@ -1365,8 +1365,8 @@ function App() {
                   </p>
 
                   <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    Add views and sales from the same reporting period. Import
-                    saves typing; it does not import traffic statistics.
+                    Request sales for your chosen dates and add views from Etsy Stats.
+                    You can enter figures manually when import is unavailable.
                   </p>
                 </div>
 

@@ -57,7 +57,8 @@ test("catalog follows pagination, uses owned identity and excludes lifetime metr
   assert.deepEqual(result.listings[0], { id: "1", title: "Product 1" });
   assert.deepEqual(Object.keys(result).sort(), ["listings", "shopId", "shopName", "source"]);
   const draft = catalogToManualDraft(result);
-  assert.deepEqual(draft.listings[0], { id: "1", title: "Product 1", views: "", sales: "", trendPercent: "" });
+  assert.deepEqual(draft.listings[0], { id: "1", etsyListingId: "1", title: "Product 1", views: "", sales: "", trendPercent: "" });
+  assert.equal(draft.shopId, "22");
 });
 
 test("catalog handles no active listings without inventing products", async () => {

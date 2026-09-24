@@ -2,6 +2,8 @@ import { useState } from "react";
 import TaskOutcomeForm from "./TaskOutcomeForm";
 import EtsyMissingEvidence from "./EtsyMissingEvidence";
 import EtsyConnection from "./EtsyConnection";
+import EtsySalesImport from "./EtsySalesImport";
+import { mergeEtsySales, clearPeriodMetrics } from "../utils/etsySales.js";
 import PilotListingReview from "./PilotListingReview";
 import PilotConsent from "./PilotConsent";
 import { defaultReportingPeriod, normalizeReportingPeriod, todayInTimeZone, shiftDate, PERIOD_ERRORS } from "../../../shared/reportingPeriod.js";
@@ -122,6 +124,8 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
   const [pilot, setPilot] = useState(null);
   const [pilotDraftVersion, setPilotDraftVersion] = useState(0);
   const [catalogImported, setCatalogImported] = useState(false);
+  const [importedShopId, setImportedShopId] = useState(null);
+  const [periodNotice, setPeriodNotice] = useState("");
 
   const [weeklyAvailableMinutes, setWeeklyAvailableMinutes] = useState("180");
 
@@ -233,8 +237,10 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
     const hasExistingData = Boolean(plan || shopName.trim() || listings.some(listing =>
       [listing.title, listing.views, listing.sales, listing.trendPercent].some(value => String(value ?? "").trim()),
     ));
-    if (hasExistingData && !window.confirm("Replace the current shop form and displayed plan with your Etsy listings? Views and sales will need to be entered again.")) return false;
+    if (hasExistingData && !window.confirm("Replace the current shop form and displayed plan with your Etsy listings? Sales will be requested for the selected dates; views need to be entered again.")) return false;
     setShopName(draft.shopName);
+    setImportedShopId(draft.shopId || null);
+    setPeriodNotice("");
     setPilotDraftVersion(value => value + 1);
     setListings(draft.listings);
     setCatalogImported(true);
@@ -256,6 +262,7 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
           ? {
               ...listing,
               [field]: value,
+              ...(["sales", "trendPercent"].includes(field) ? { salesSource: undefined, salesNeedsReview: false } : {}),
             }
           : listing,
       ),
@@ -1392,8 +1399,24 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
   }
 
   function updateReportingPeriod(field, value) {
+    if (reportingPeriod[field] === value) return;
     setReportingPeriod((current) => ({ ...current, [field]: value }));
+    setListings(clearPeriodMetrics);
+    setPlan(null);
+    setPeriodNotice("Dates changed. Previous views, sales and trends were cleared so different periods are not mixed.");
     setError("");
+  }
+
+  const salesListingIdsKey = JSON.stringify(listings.filter(item => item.etsyListingId).map(item => item.id));
+  const salesPeriodKey = JSON.stringify(reportingPeriod);
+
+  function applyPeriodSales(data) {
+    // Validate before scheduling the update, then merge against current input to preserve seller edits.
+    mergeEtsySales(listings, data, importedShopId, reportingPeriod);
+    setListings(current => {
+      try { return mergeEtsySales(current, data, importedShopId, reportingPeriod); }
+      catch { return current; } // Selection changed while this update was queued.
+    });
   }
 
   const manualFormErrors = getManualFormErrors({
@@ -1442,7 +1465,7 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
             <h3 className="font-bold">Start with a product you want to improve</h3>
             <ol className="mt-3 list-inside list-decimal space-y-3 leading-6">
               <li>Import active listing titles from Etsy, or enter a product manually.</li>
-              <li>Add its views and sales for the same date range. Import does not fill these numbers.</li>
+              <li>Choose a date range. Sales import fills available paid-unit counts; add the product’s views from Etsy Stats for the same dates.</li>
               <li>Use the weekly plan to decide what to investigate. Approved pilot sellers can also request a copy draft and one action to test.</li>
             </ol>
             <p className="mt-4 leading-6">Connecting does not change your listings, place orders or grant private-pilot access. No active products? You can still explore the sample workflow.</p>
@@ -1571,7 +1594,7 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
               >
                 {catalogImported && (
                   <p role="status" className="mb-5 rounded-xl bg-sky-50 p-4 text-sm text-sky-800 dark:bg-sky-950 dark:text-sky-200">
-                    Started from your Etsy shop name and active listing titles. Views, sales, and optional sales trends must be entered for the dates below. No performance numbers were imported or estimated. You can remove listings you do not want to review.
+                    Started from your Etsy shop name and selected active products. Sales are requested for the dates below. Add views from Etsy Stats; enter sales manually if automatic import is unavailable. Remove products you do not want to review.
                   </p>
                 )}
                 <div className="mb-6 border-b border-slate-100 pb-5 dark:border-slate-800">
@@ -1668,6 +1691,11 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
                     </p>
                   )}
                   {manualPeriodError && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{manualPeriodError}</p>}
+                  {periodNotice && <p role="status" className="mt-3 text-sm">{periodNotice}</p>}
+                  {catalogImported && importedShopId && salesListingIdsKey !== "[]" && manualPeriodPreview && (
+                    <EtsySalesImport key={`${importedShopId}:${salesListingIdsKey}:${salesPeriodKey}:${Boolean(pilot?.termsAccepted)}`}
+                      shopId={importedShopId} listingIdsKey={salesListingIdsKey} periodKey={salesPeriodKey} onApply={applyPeriodSales} />
+                  )}
                 </fieldset>
 
                 <div className="mt-7 flex items-center justify-between">
@@ -1759,7 +1787,7 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
 
                           <div>
                             <label className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">
-                              Sales
+                              Sales (units)
                             </label>
 
                             <input
@@ -1777,6 +1805,7 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
                               }
                               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                             />
+                            {listing.salesNeedsReview && <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">Refunds affect this product. Check its sales for these dates and enter the correct units.</p>}
                           </div>
 
                           <div>

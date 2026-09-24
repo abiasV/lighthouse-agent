@@ -36,7 +36,7 @@ export default function PilotConsent({ onAccepted }) {
 
   return <form onSubmit={submit} className="space-y-4 rounded-2xl border border-indigo-200 bg-white p-5 dark:border-indigo-800 dark:bg-slate-900">
     <h3 className="text-lg font-bold">Before using the private pilot</h3>
-    <p className="text-sm leading-6">This early pilot is free. When you request an AI review, selected product text and the facts and performance figures you supply go to OpenAI to prepare suggestions. Review drafts before using them; sales improvements are not guaranteed.</p>
+    <p className="text-sm leading-6">This early pilot is free. When you request an AI review, selected product text, supplied facts and aggregate performance figures (including imported sales) go to OpenAI to prepare suggestions. Review drafts before using them; sales improvements are not guaranteed.</p>
     <label className="flex items-start gap-3 text-sm leading-6">
       <input className="mt-1" type="checkbox" checked={accepted} disabled={busy} onChange={event => setAccepted(event.target.checked)} />
       <span>I accept the <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">pilot terms</a> and have read the <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">privacy notice</a>, including AI processing and retention.</span>
