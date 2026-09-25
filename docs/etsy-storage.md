@@ -414,3 +414,12 @@ setting it false restores the legacy public behavior.
   confirm Etsy's required written analytics/AI permission and pilot configuration,
   then verify useful output with a populated shop. Ten revised outreach drafts
   remain unsent pending the user's review and the readiness checks above.
+
+### Hosting resumed (2026-09-25 UTC)
+
+- The operator upgraded the existing Netlify team to Personal. Netlify now reports
+  1,000 monthly plan credits and automatic credit recharge disabled. This hosting
+  change does not enable the invitation-only Etsy pilot or its sales route.
+- Trigger one production build from the GitHub-connected `main` branch, then
+  verify the published commit, Netlify proxy routing, and the public seller flow.
+  Keep outreach drafts unsent until the remaining pilot gates pass.
