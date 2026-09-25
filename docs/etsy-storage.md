@@ -386,3 +386,31 @@ Local sample/manual development is unchanged while the feature flag is absent.
 Real Etsy OAuth remains hosted-only. To close all private functionality without
 reopening legacy routes, keep the private-pilot flag true and empty the allowlist;
 setting it false restores the legacy public behavior.
+
+### Browser verification and release status (2026-09-25)
+
+- Tested the production frontend build in Chromium with intercepted fixture API
+  responses. Selected-product import, required views/button validation, preservation
+  of edits during requests, manual fallback on API failure, stale-response rejection
+  after a date change, and blank metrics for ambiguous refunds all passed. No React
+  runtime errors were observed. This does **not** verify live Etsy data or OAuth.
+- Reproducible check: build with `npm --prefix client run build`, then run
+  `node scripts/testEtsySalesBrowser.mjs` with Playwright and its Chromium installed
+  in the test environment. Optional `LIGHTHOUSE_PLAYWRIGHT_MODULE` (module path) and
+  `LIGHTHOUSE_CHROMIUM_EXECUTABLE` (binary path) allow external tooling without adding
+  browser dependencies to the production install. Requests are intercepted and no
+  real account, API token, email or paid service is used. The test clock is fixed.
+- Read-only Netlify inspection confirmed the published deploy is still `e3d374a`
+  (`6ab2a10dddc674000885ec82`), while GitHub contains sales import at `c8b1940`.
+  Production publication is still outstanding; do not tell sellers these changes
+  are already available. No hosting purchase or extra deploy was triggered.
+- Native PostgreSQL integration tests remain unexecuted in this workspace: no
+  server was installed and the package manager could not run with the available
+  OS permissions. Do not substitute the successful mocked/browser tests for the
+  two PostgreSQL integration checks. Run both against a dedicated local
+  `lighthouse_test*` database, never production:
+  `ETSY_TEST_DATABASE_URL=<local-test-url> node --test tests/etsyPostgresStorage.integration.test.js tests/pilotPostgres.integration.test.js`.
+- Next release gates remain: resume Netlify publication, complete database checks,
+  confirm Etsy's required written analytics/AI permission and pilot configuration,
+  then verify useful output with a populated shop. Ten revised outreach drafts
+  remain unsent pending the user's review and the readiness checks above.
