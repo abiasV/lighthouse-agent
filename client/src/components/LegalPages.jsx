@@ -55,7 +55,7 @@ export function LegalFooter() {
       <a className="underline" href="/privacy">Privacy notice</a>
       <a className="underline" href="/support">Support</a>
     </nav>
-    <p className="mt-4">Etsy is a trademark of Etsy, Inc. Lighthouse uses the Etsy API and is neither endorsed nor certified by Etsy.</p>
+    <p className="mt-4">The term 'Etsy' is a trademark of Etsy, Inc. This application uses the Etsy API but is not endorsed or certified by Etsy, Inc.</p>
   </footer>;
 }
 
