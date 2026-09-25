@@ -1,32 +1,80 @@
-import ListingReviewContent from "./ListingReviewContent";
+export default function SellerReviewExample({ onOpenPlanner }) {
+  return (
+    <section
+      id="sample-review"
+      aria-labelledby="sample-review-title"
+      className="relative scroll-mt-8 overflow-hidden rounded-3xl border border-indigo-200 bg-white shadow-xl shadow-indigo-100/50 dark:border-indigo-800 dark:bg-slate-900 dark:shadow-none"
+    >
+      <div className="border-b border-indigo-100 bg-indigo-50/70 p-6 dark:border-indigo-900 dark:bg-indigo-950/40 sm:p-7">
+        <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-300">
+          From a shop question to a next step
+        </p>
+        <h3 id="sample-review-title" className="mt-3 text-2xl font-bold tracking-tight">
+          Getting views, but few sales?
+        </h3>
+        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+          Start with one product. Use its figures and details to choose a change
+          worth testing, then keep track of what happens.
+        </p>
+      </div>
 
-const example = {
-  assessment: "The original title does not tell a buyer whether this is a digital file or what it includes. Clarifying those facts is one change worth testing; the numbers alone do not explain why people did not buy.",
-  draftTitle: "Printable Weekly Meal Planner PDF with Shopping List — A4 and US Letter",
-  draftDescription: "Plan a week of meals and write your shopping list in one place. This digital download includes two PDF pages: a weekly meal planner and a shopping list, in A4 and US Letter sizes. Print at home. No physical item will be shipped.",
-  nextAction: "For this example, update only the opening description to explain the format and what is included. Keep the other listing elements unchanged while you observe the result.",
-  measurementPlan: "Record the edit date. After another 30 completed days, compare views and sales with the original 30-day period. Note price changes, promotions and seasonal effects. A difference does not prove that this edit caused it.",
-  limitations: "This is a hand-written illustration, not a live AI review or a seller success story. Photos, search demand and competitors have not been evaluated. Suggested wording must match the actual product.",
-};
+      <div className="p-6 sm:p-7">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold">Example: a printable meal planner</p>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            Fictional example
+          </span>
+        </div>
 
-export default function SellerReviewExample() {
-  return <section id="sample-review" aria-labelledby="sample-review-title" className="relative scroll-mt-8 rounded-3xl border border-indigo-200 bg-white p-6 shadow-xl shadow-indigo-100/50 dark:border-indigo-800 dark:bg-slate-900 dark:shadow-none">
-    <p className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-300">See the output before connecting</p>
-    <h3 id="sample-review-title" className="mt-3 text-2xl font-bold">One product. One clearer next step.</h3>
-    <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">Explore this fictional example without an Etsy account. It makes no API request and does not use your shop data.</p>
-    <div className="mt-5 rounded-xl bg-slate-50 p-4 text-sm dark:bg-slate-950">
-      <p className="font-semibold">Example seller’s problem</p>
-      <p className="mt-2">“People view my meal planner, but few buy. How can I explain it more clearly?”</p>
-      <dl className="mt-4 space-y-3">
-        <div><dt className="font-semibold">Current title</dt><dd>Meal Planner</dd></div>
-        <div><dt className="font-semibold">Product facts</dt><dd>Two PDF pages: meal planner and shopping list. A4 and US Letter. Digital download; no physical item.</dd></div>
-        <div><dt className="font-semibold">Illustrative 30-day figures</dt><dd>700 views · 5 sales. These are example inputs, not improved results.</dd></div>
-      </dl>
-    </div>
-    <details className="mt-5 rounded-xl border border-indigo-200 p-4 dark:border-indigo-800">
-      <summary className="cursor-pointer font-semibold text-indigo-700 dark:text-indigo-300">See the suggested improvement</summary>
-      <div className="mt-5"><ListingReviewContent result={example} /></div>
-    </details>
-    <p className="mt-4 text-xs leading-5 text-slate-500 dark:text-slate-400">Personalized AI drafts are part of the invite-only pilot, still being prepared. This preview does not grant pilot access.</p>
-  </section>;
+        <ol className="mt-5 space-y-5">
+          <li className="flex gap-3">
+            <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">1</span>
+            <div>
+              <h4 className="font-semibold">Find a question to investigate</h4>
+              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                The title says “Meal Planner.” Can a buyer tell it is a printable
+                PDF and that a shopping list is included?
+              </p>
+            </div>
+          </li>
+          <li className="flex gap-3">
+            <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">2</span>
+            <div>
+              <h4 className="font-semibold">Choose one practical change</h4>
+              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                Make the download format and included pages clear in the opening
+                description. Check that the wording matches the product.
+              </p>
+            </div>
+          </li>
+          <li className="flex gap-3">
+            <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">3</span>
+            <div>
+              <h4 className="font-semibold">Check the result</h4>
+              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                Record the edit date, then compare views and sales across equal
+                periods. Note promotions and other changes that could affect them.
+              </p>
+            </div>
+          </li>
+        </ol>
+
+        <p className="mt-5 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+          This illustrates the approach, not a proven sales result. Your figures
+          alone cannot tell us why someone did not buy.
+        </p>
+        <button
+          type="button"
+          onClick={onOpenPlanner}
+          className="mt-5 w-full cursor-pointer rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300 dark:hover:bg-indigo-950"
+        >
+          Explore the sample planner
+        </button>
+        <p className="mt-3 text-center text-xs leading-5 text-slate-500 dark:text-slate-400">
+          No Etsy connection needed. Personal AI suggestions are part of the
+          private pilot, which is still being prepared.
+        </p>
+      </div>
+    </section>
+  );
 }

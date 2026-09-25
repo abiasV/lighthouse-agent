@@ -77,6 +77,9 @@ function App() {
   function handleOpenShopPlan() {
     setError("");
     setView("shopPlan");
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    });
   }
 
   function handleBackToLanding() {
@@ -1280,7 +1283,7 @@ function App() {
                     >
                       Build My Weekly Growth Plan
                     </button>
-                    <a href="#sample-review" className="mt-4 block text-center text-sm font-semibold text-indigo-700 underline dark:text-indigo-300">See a sample review — no connection needed</a>
+                    <a href="#sample-review" className="mt-4 block text-center text-sm font-semibold text-indigo-700 underline dark:text-indigo-300">See how a product review helps</a>
                     <p className="mt-3 text-center text-xs leading-5 text-slate-500 dark:text-slate-400">Read-only Etsy connection. Personalized AI reviews are invite-only and still being prepared.</p>
 
                     <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-700">
@@ -1329,7 +1332,7 @@ function App() {
                   </div>
                 </div>
 
-                <SellerReviewExample />
+                <SellerReviewExample onOpenPlanner={handleOpenShopPlan} />
               </div>
             </section>
 
@@ -1537,7 +1540,7 @@ function App() {
                   <li>No card, subscription or payment is required for the pilot.</li>
                 </ul>
                 <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">We learn from real use; you receive work you can evaluate. Sales improvements are not guaranteed. Connecting an account does not reserve a place.</p>
-                <a href="#sample-review" className="mt-6 inline-block rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-700">Explore the example review</a>
+                <a href="#sample-review" className="mt-6 inline-block rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-700">See the review approach</a>
               </div>
             </section>
 

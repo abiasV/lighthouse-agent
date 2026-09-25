@@ -423,3 +423,36 @@ setting it false restores the legacy public behavior.
 - Trigger one production build from the GitHub-connected `main` branch, then
   verify the published commit, Netlify proxy routing, and the public seller flow.
   Keep outreach drafts unsent until the remaining pilot gates pass.
+
+### Seller-facing review and readiness audit (2026-09-25)
+
+This is the current status; earlier blocked-deploy entries above are historical.
+
+- Netlify production published `a58ee5a`, including the required Etsy trademark
+  notice. Hosting credit exhaustion is resolved.
+- The operator supplied a screenshot showing **Pending Commercial Approval**.
+  Submission is complete; approval and specific written analytics/AI authorization
+  remain outstanding. Do not enable either approval flag on this evidence.
+- The operator's before/after screenshots show **Run Shop Review** completing and
+  displaying its sample result. The earlier cloud-browser stall is not evidence
+  of a confirmed product defect. Local GENERAL_REVIEW execution also returned 200.
+- Replaced the landing page's expandable copy-draft example and Copy buttons with
+  a compact fictional problem → one proposed change → measurement example.
+  A working sample-planner button opens the existing workflow at the top of the
+  page. No live AI review or proven sales uplift is implied.
+- Targeted audit: 191 passing tests covering Etsy, reporting periods, planning,
+  outcomes and pilot access/budget logic; two real PostgreSQL integration tests
+  skipped because no dedicated local PostgreSQL server is available. Lint and
+  production build passed. These checks do not verify live Etsy receipt imports
+  or real AI output quality.
+- The live Support page, after a reload, explicitly reports that its public
+  contact is still being configured. Obtain the operator's chosen monitored
+  address and configure `LIGHTHOUSE_SUPPORT_EMAIL` on Render before invitations.
+- Remaining release gates: dedicated PostgreSQL checks and migrations; verified
+  persistent storage and pilot settings (at most five approved Etsy user IDs,
+  dedicated AI key and the existing budget ledger); required Etsy authorization;
+  a useful end-to-end review and import check using an authorized populated shop.
+- Outreach order: clear these gates, verify the existing recipients are still
+  relevant/active, align the approved drafts with the live deliverable, then send
+  the ten invitations. Admit at most five sellers; after delivering a useful
+  review ask whether they would use it again next week. No emails sent in this audit.
