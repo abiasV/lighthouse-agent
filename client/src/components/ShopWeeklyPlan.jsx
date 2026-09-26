@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createSamplePlanner, buildMockEtsySnapshot } from "../utils/samplePlanner.js";
 import TaskOutcomeForm from "./TaskOutcomeForm";
 import EtsyMissingEvidence from "./EtsyMissingEvidence";
 import EtsyConnection from "./EtsyConnection";
@@ -122,6 +123,7 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
   const [etsyPeriodConfirmed, setEtsyPeriodConfirmed] = useState(false);
   const [shopName, setShopName] = useState("");
   const [pilot, setPilot] = useState(null);
+  const [samplePlanner] = useState(createSamplePlanner);
   const [pilotDraftVersion, setPilotDraftVersion] = useState(0);
   const [catalogImported, setCatalogImported] = useState(false);
   const [importedShopId, setImportedShopId] = useState(null);
@@ -161,48 +163,14 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
 
   const [highlightedListingId, setHighlightedListingId] = useState(null);
 
-  function buildMockEtsySnapshot() {
-    return {
-      shopId: "shop_mock_1",
-      shopName: "Maya Studio",
-
-      period: {
-        days: 30,
-        currentStart: "2026-08-13T00:00:00.000Z",
-        currentEndExclusive: "2026-09-12T00:00:00.000Z",
-        previousStart: "2026-07-14T00:00:00.000Z",
-        previousEndExclusive: "2026-08-13T00:00:00.000Z",
-        timeZone: "UTC",
-      },
-
-      listings: [
-        {
-          id: "listing_mock_1",
-          title: "Printable Birthday Invitation",
-
-          metrics: {
-            periodViews: null,
-            currentPeriodSales: 5,
-            previousPeriodSales: 5,
-            trendPercent: 0,
-          },
-
-          availability: {
-            periodViews: "UNAVAILABLE",
-            currentPeriodSales: "AVAILABLE",
-            previousPeriodSales: "AVAILABLE",
-            trendPercent: "DERIVED",
-          },
-
-          sources: {
-            periodViews: null,
-            currentPeriodSales: "ETSY",
-            previousPeriodSales: "ETSY",
-            trendPercent: "LIGHTHOUSE_DERIVED",
-          },
-        },
-      ],
-    };
+  async function requestShop(path, body) {
+    if (dataSourceMode === "ETSY") return samplePlanner.request(path, body);
+    const response = await fetch("/api/shop" + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return readJsonResponse(response);
   }
 
   function showToast(message) {
@@ -307,21 +275,11 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
       setEtsyLoading(true);
       setError("");
 
-      const response = await fetch("/api/shop/etsy/plan", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
+      const data = await requestShop("/etsy/plan", {
           snapshot: buildMockEtsySnapshot(),
           sellerInputs: [],
           weeklyAvailableMinutes: Number(weeklyAvailableMinutes) || null,
-        }),
-      });
-
-      const data = await readJsonResponse(response);
+        });
 
       setEtsyPlanningResult(data);
 
@@ -375,21 +333,11 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
       setEtsyLoading(true);
       setError("");
 
-      const response = await fetch("/api/shop/etsy/plan", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
+      const data = await requestShop("/etsy/plan", {
           snapshot: buildMockEtsySnapshot(),
           sellerInputs,
           weeklyAvailableMinutes: Number(weeklyAvailableMinutes) || null,
-        }),
-      });
-
-      const data = await readJsonResponse(response);
+        });
 
       setEtsyPlanningResult(data);
 
@@ -513,19 +461,9 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
       setExecutionLoading(true);
       setError("");
 
-      const response = await fetch("/api/shop/execute", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
+      const data = await requestShop("/execute", {
           shopPlanId: plan.shopPlanId,
-        }),
-      });
-
-      const data = await readJsonResponse(response);
+        });
 
       setPlan(data);
 
@@ -563,21 +501,11 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
       setApprovalLoadingTaskId(taskId);
       setError("");
 
-      const response = await fetch("/api/shop/approval", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
+      const data = await requestShop("/approval", {
           shopPlanId: plan.shopPlanId,
           taskId,
           decision,
-        }),
-      });
-
-      const data = await readJsonResponse(response);
+        });
 
       setPlan(data);
 
@@ -610,21 +538,11 @@ function ShopWeeklyPlan({ onBack, etsyReturnStatus }) {
       setOutcomeLoadingTaskId(taskId);
       setError("");
 
-      const response = await fetch("/api/shop/outcome", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
+      const data = await requestShop("/outcome", {
           shopPlanId: plan.shopPlanId,
           taskId,
           outcome,
-        }),
-      });
-
-      const data = await readJsonResponse(response);
+        });
 
       setPlan(data);
 

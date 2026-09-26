@@ -486,3 +486,23 @@ This is the current status; earlier blocked-deploy entries above are historical.
   LIGHTHOUSE_PRIVATE_PILOT, LIGHTHOUSE_ETSY_REVIEW_APPROVED or pilot allowlist.
   Private review activation remains pending a securely supplied dedicated API key
   and verified approved account IDs. No secrets were copied or exposed.
+
+### Public demo remains available during the private pilot (2026-09-26)
+
+- Confirmed OPENAI_API_KEY is present in Render's environment variable list,
+  without revealing its value. This does not verify key validity or API credit.
+- Found a launch regression: private mode guards all /api/shop routes, including
+  the previously public sample. Moved the fixed fictional sample workflow into
+  a disposable browser-local session using the same deterministic planning,
+  execution, approval and outcome functions. No API calls, paid provider or
+  shared server session is used by the demo. Real/manual plans retain server gates.
+- Extracted the existing pure approval-proposal helper, preserving its backend
+  export and behavior. No scoring or approval thresholds changed.
+- Verification: 54 relevant planning, execution, outcome, sample and pilot tests
+  passed; client lint/build passed. Sample tests reject foreign/replaced session
+  IDs and verify local execution, approval and outcome handling.
+- Live AI testing is still blocked on completing the owner's Etsy sign-in and
+  binding private access to verified Etsy IDs. Google browser inspection was
+  rejected by automatic approval review because the tool usage allowance was
+  exhausted; this is not an Etsy/API authentication failure. No paid review,
+  allowlist change or outreach was performed.
