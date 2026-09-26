@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PILOT_TERMS_VERSION } from "../../../shared/pilotTerms.js";
+import { PILOT_TERMS_VERSION, DEFAULT_SUPPORT_EMAIL } from "../../../shared/pilotTerms.js";
 
 const sections = {
   terms: [
@@ -27,7 +27,7 @@ const sections = {
 };
 
 function SupportContact() {
-  const [contact, setContact] = useState({ loading: true });
+  const [contact, setContact] = useState({ email: DEFAULT_SUPPORT_EMAIL });
   useEffect(() => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
@@ -35,9 +35,9 @@ function SupportContact() {
       .then(async response => {
         if (!response.ok) throw new Error();
         const data = await response.json();
-        if (!controller.signal.aborted) setContact({ email: data.supportEmail });
+        if (!controller.signal.aborted) setContact({ email: data.supportEmail || DEFAULT_SUPPORT_EMAIL });
       })
-      .catch(() => setContact({ error: true }))
+      .catch(() => { if (!controller.signal.aborted) setContact({ email: DEFAULT_SUPPORT_EMAIL }); })
       .finally(() => clearTimeout(timeout));
     return () => { clearTimeout(timeout); controller.abort(); };
   }, []);
@@ -65,7 +65,7 @@ export default function LegalPage({ page }) {
     <article className="mx-auto max-w-3xl space-y-7">
       <a className="text-indigo-600 underline dark:text-indigo-300" href="/">Back to Lighthouse</a>
       <h1 className="text-3xl font-bold">{title}</h1>
-      <p className="text-sm text-slate-500 dark:text-slate-400">Version {PILOT_TERMS_VERSION} · Updated September 23, 2026</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400">Version {PILOT_TERMS_VERSION} · Updated September 26, 2026</p>
       {sections[page].map(([heading, text]) => <section key={heading}>
         <h2 className="mb-2 text-xl font-semibold">{heading}</h2>
         <p className="leading-7">{text}</p>

@@ -456,3 +456,22 @@ This is the current status; earlier blocked-deploy entries above are historical.
   relevant/active, align the approved drafts with the live deliverable, then send
   the ten invitations. Admit at most five sellers; after delivering a useful
   review ask whether they would use it again next week. No emails sent in this audit.
+
+### Commercial approval and support contact (2026-09-26)
+
+- The operator's Etsy dashboard shows Commercial Access. The September 25 Etsy
+  approval email also confirms production integration approval. The submitted
+  application disclosed selected-product AI suggestions; this records approval
+  of that submitted integration, not blanket permission for future data uses.
+- The operator authorized vaziria.cv@gmail.com as the public support address.
+  It is the shared default, with a validated backend environment override.
+  Legal pages display the default immediately even if the API is unavailable.
+- Added an isolated GitHub Actions PostgreSQL 16 service for both real database
+  integration tests. It uses disposable test credentials and no production
+  secrets. Its run result must be checked before marking the database gate passed.
+- Local verification: 12 focused pilot tests pass; client lint and build pass.
+- Render dashboard currently requires sign-in in this working session. Production
+  pilot configuration, applied migrations and real provider output remain to be
+  verified. Do not infer activation from Commercial approval or a frontend deploy.
+- Keep the five-account allowlist and C$30 total reservation ledger. Verify a
+  complete useful review before outreach. No invitations sent in this update.

@@ -1,0 +1,50 @@
+name: PostgreSQL integration
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "shared/**"
+      - "migrations/**"
+      - "tests/*Postgres*.test.js"
+      - "package*.json"
+      - ".github/workflows/postgres-integration.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "shared/**"
+      - "migrations/**"
+      - "tests/*Postgres*.test.js"
+      - "package*.json"
+      - ".github/workflows/postgres-integration.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lighthouse
+          POSTGRES_PASSWORD: isolated-test-only
+          POSTGRES_DB: lighthouse_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U lighthouse -d lighthouse_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Verify encrypted storage and durable pilot limits
+        env:
+          ETSY_TEST_DATABASE_URL: postgresql://lighthouse:isolated-test-only@127.0.0.1:5432/lighthouse_test
+        run: node --test tests/etsyPostgresStorage.integration.test.js tests/pilotPostgres.integration.test.js

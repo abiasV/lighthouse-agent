@@ -81,7 +81,8 @@ test("only approved accounts receive a scoped HttpOnly pilot alias", async () =>
 test("public legal configuration exposes only a valid public contact and terms version", () => {
   assert.deepEqual(publicLegalConfig({ LIGHTHOUSE_SUPPORT_EMAIL: " support@example.org ", OPENAI_API_KEY: "secret", ETSY_DATABASE_URL: "secret" }),
     { supportEmail: "support@example.org", termsVersion: PILOT_TERMS_VERSION });
-  for (const value of [undefined, "", "private", "user@example.org\r\nBCC:other@example.org", "mailto:user@example.org"]) {
+  assert.equal(publicLegalConfig().supportEmail, "vaziria.cv@gmail.com");
+  for (const value of [null, "", "private", "user@example.org\r\nBCC:other@example.org", "mailto:user@example.org"]) {
     assert.equal(publicLegalConfig({ LIGHTHOUSE_SUPPORT_EMAIL: value }).supportEmail, null);
   }
 });
