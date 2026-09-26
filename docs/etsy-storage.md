@@ -475,3 +475,14 @@ This is the current status; earlier blocked-deploy entries above are historical.
   verified. Do not infer activation from Commercial approval or a frontend deploy.
 - Keep the five-account allowlist and C$30 total reservation ledger. Verify a
   complete useful review before outreach. No invitations sent in this update.
+
+- Follow-up verification: GitHub Actions run 36208248727 completed successfully,
+  including both real PostgreSQL integration tests. Netlify production deploy
+  6ab71e83c09275000802cfa6 and Render both published d9fd995.
+- Render startup logs confirm migrations completed and the API is Live.
+  LIGHTHOUSE_SUPPORT_EMAIL is now saved on Render and redeployed; the live
+  Support page displays the authorized address.
+- Render sign-in succeeded. Environment inspection found no OPENAI_API_KEY,
+  LIGHTHOUSE_PRIVATE_PILOT, LIGHTHOUSE_ETSY_REVIEW_APPROVED or pilot allowlist.
+  Private review activation remains pending a securely supplied dedicated API key
+  and verified approved account IDs. No secrets were copied or exposed.
